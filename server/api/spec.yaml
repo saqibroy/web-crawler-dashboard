@@ -1,0 +1,40 @@
+paths:
+  /api/urls:
+    post:
+      summary: Submit URL for analysis
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url: 
+                  type: string
+                  example: "https://example.com"
+      responses:
+        '202':
+          description: Analysis started
+
+  /api/analyses:
+    get:
+      summary: Get analysis results
+      parameters:
+        - name: page
+          in: query
+          schema: {type: integer, default: 1}
+        - name: limit
+          in: query
+          schema: {type: integer, default: 20}
+      responses:
+        '200':
+          description: Analysis results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    id: {type: string}
+                    url: {type: string}
+                    status: {type: string}
+                    title: {type: string}
