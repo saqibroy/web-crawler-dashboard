@@ -12,8 +12,9 @@ export default function AnalysisDetail() {
 
   useEffect(() => {
     const fetchAnalysis = async () => {
-      const response = await getAnalyses(1, 100); // Get all to find by ID
-      const found = response.data.data.find((a: Analysis) => a.id === id);
+      const response = await getAnalyses(1, 100);
+      const arr = Array.isArray(response.data) ? response.data : [];
+      const found = arr.find((a: Analysis) => a.id === id);
       if (found) setAnalysis(found);
     };
     fetchAnalysis();

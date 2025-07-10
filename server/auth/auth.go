@@ -4,7 +4,10 @@ import (
 	"errors"
 	"os"
 	"strings"
+	"sync"
 	"time"
+
+	"golang.org/x/time/rate"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -47,7 +50,16 @@ func GenerateAccessToken() (string, error) {
 }
 
 func AuthMiddleware() gin.HandlerFunc {
+	var once sync.Once
+	var limiter *rate.Limiter
+	once.Do(func() {
+		limiter = rate.NewLimiter(rate.Every(time.Minute/10), 10)
+	})
 	return func(c *gin.Context) {
+		if !limiter.Allow() {
+			c.AbortWithStatusJSON(429, gin.H{"error": "Too many requests"})
+			return
+		}
 		tokenString := extractToken(c)
 		if tokenString == "" {
 			c.AbortWithStatusJSON(401, gin.H{

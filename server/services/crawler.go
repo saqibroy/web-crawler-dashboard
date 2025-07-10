@@ -56,5 +56,19 @@ func Crawl(url string) (*models.Analysis, error) {
 	// Check for login form
 	analysis.HasLoginForm = doc.Find("input[type='password']").Length() > 0
 
+	// Link validation
+	brokenLinks := make(map[string]interface{})
+	doc.Find("a").Each(func(_ int, s *goquery.Selection) {
+		href, exists := s.Attr("href")
+		if !exists || href == "" {
+			return
+		}
+		resp, err := http.Head(href)
+		if err != nil || resp.StatusCode >= 400 {
+			brokenLinks[href] = "broken"
+		}
+	})
+	analysis.BrokenLinks = brokenLinks
+
 	return analysis, nil
 }

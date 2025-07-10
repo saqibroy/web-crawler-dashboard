@@ -14,7 +14,7 @@ export default function Dashboard() {
     setIsLoading(true);
     try {
       const response = await getAnalyses(page);
-      setAnalyses(response.data.data);
+      setAnalyses(response.data || []);
     } finally {
       setIsLoading(false);
     }

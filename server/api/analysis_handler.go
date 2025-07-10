@@ -1,6 +1,8 @@
 package api
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/saqibroy/web-crawler-dashboard/server/db"
 	"github.com/saqibroy/web-crawler-dashboard/server/models"
@@ -34,8 +36,16 @@ func SubmitURL(c *gin.Context) {
 }
 
 func GetAnalyses(c *gin.Context) {
-	// Implement pagination and filtering
+	// Pagination
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 20
+	}
 	var analyses []models.Analysis
-	db.DB.Order("created_at desc").Find(&analyses)
+	db.DB.Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&analyses)
 	c.JSON(200, analyses)
 }
