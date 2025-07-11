@@ -3,14 +3,17 @@ package services
 import (
 	"errors"
 	"net/http"
+	"net/url"
+	"strings"
+	"time"
 
 	"github.com/saqibroy/web-crawler-dashboard/server/models"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
-func Crawl(url string) (*models.Analysis, error) {
-	resp, err := http.Get(url)
+func Crawl(targetURL string) (*models.Analysis, error) {
+	resp, err := http.Get(targetURL)
 	if err != nil {
 		return nil, err
 	}
@@ -26,8 +29,15 @@ func Crawl(url string) (*models.Analysis, error) {
 	}
 
 	analysis := &models.Analysis{
-		URL: url,
+		URL: targetURL,
 	}
+
+	// Parse the target URL to get the base domain
+	parsedURL, err := url.Parse(targetURL)
+	if err != nil {
+		return nil, err
+	}
+	baseDomain := parsedURL.Host
 
 	// Get HTML version
 	docType := doc.Find("html").AttrOr("version", "")
@@ -56,18 +66,51 @@ func Crawl(url string) (*models.Analysis, error) {
 	// Check for login form
 	analysis.HasLoginForm = doc.Find("input[type='password']").Length() > 0
 
-	// Link validation
+	// Count internal vs external links and check for broken links
+	internalCount := 0
+	externalCount := 0
 	brokenLinks := make(map[string]interface{})
-	doc.Find("a").Each(func(_ int, s *goquery.Selection) {
+
+	doc.Find("a[href]").Each(func(_ int, s *goquery.Selection) {
 		href, exists := s.Attr("href")
-		if !exists || href == "" {
+		if !exists || href == "" || strings.HasPrefix(href, "#") {
 			return
 		}
-		resp, err := http.Head(href)
+
+		// Parse the link URL
+		linkURL, err := url.Parse(href)
+		if err != nil {
+			return
+		}
+
+		// If it's a relative URL, make it absolute
+		if linkURL.Host == "" {
+			linkURL = parsedURL.ResolveReference(linkURL)
+		}
+
+		// Check if it's internal or external
+		if linkURL.Host == baseDomain {
+			internalCount++
+		} else {
+			externalCount++
+		}
+
+		// Check if link is broken (synchronously for simplicity)
+		client := &http.Client{
+			Timeout: 3 * time.Second,
+		}
+		resp, err := client.Head(linkURL.String())
 		if err != nil || resp.StatusCode >= 400 {
-			brokenLinks[href] = "broken"
+			status := "Error"
+			if resp != nil {
+				status = resp.Status
+			}
+			brokenLinks[linkURL.String()] = status
 		}
 	})
+
+	analysis.InternalLinks = internalCount
+	analysis.ExternalLinks = externalCount
 	analysis.BrokenLinks = brokenLinks
 
 	return analysis, nil

@@ -9,12 +9,21 @@ export default function Dashboard() {
   const [page] = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const fetchAnalyses = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const response = await getAnalyses(page);
       setAnalyses(response.data || []);
+    } catch (err: any) {
+      if (err.response && err.response.data && err.response.data.error) {
+        setError(err.response.data.error + (err.response.data.details ? ': ' + err.response.data.details : ''));
+      } else {
+        setError('Failed to fetch analyses. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -37,9 +46,21 @@ export default function Dashboard() {
 
   const handleDeleteSelected = async () => {
     if (selectedIds.length > 0) {
-      await deleteAnalyses(selectedIds);
-      setSelectedIds([]);
-      fetchAnalyses();
+      setError(null);
+      setSuccess(null);
+      try {
+        await deleteAnalyses(selectedIds);
+        setSelectedIds([]);
+        fetchAnalyses();
+        setSuccess('Selected analyses deleted successfully.');
+        setTimeout(() => setSuccess(null), 3000);
+      } catch (err: any) {
+        if (err.response && err.response.data && err.response.data.error) {
+          setError(err.response.data.error + (err.response.data.details ? ': ' + err.response.data.details : ''));
+        } else {
+          setError('Failed to delete analyses. Please try again.');
+        }
+      }
     }
   };
 
@@ -49,6 +70,8 @@ export default function Dashboard() {
       
       <UrlForm onSubmitted={fetchAnalyses} />
       
+      {error && <div className="text-red-600 mb-4 text-sm">{error}</div>}
+      {success && <div className="text-green-600 mb-4 text-sm">{success}</div>}
       <div className="mb-4 flex gap-2">
         <button
           onClick={handleDeleteSelected}

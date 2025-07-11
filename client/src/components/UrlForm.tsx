@@ -4,14 +4,28 @@ import { submitUrl } from '../services/api';
 export default function UrlForm({ onSubmitted }: { onSubmitted: () => void }) {
   const [url, setUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
     try {
-      await submitUrl(url);
+      const trimmedUrl = url.trim();
+      if (!trimmedUrl) {
+        setError('Please enter a valid URL.');
+        setIsSubmitting(false);
+        return;
+      }
+      await submitUrl(trimmedUrl);
       setUrl('');
       onSubmitted();
+    } catch (err: any) {
+      if (err.response && err.response.data && err.response.data.error) {
+        setError(err.response.data.error + (err.response.data.details ? ': ' + err.response.data.details : ''));
+      } else {
+        setError('Failed to submit URL. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -36,6 +50,7 @@ export default function UrlForm({ onSubmitted }: { onSubmitted: () => void }) {
           {isSubmitting ? 'Submitting...' : 'Analyze'}
         </button>
       </div>
+      {error && <div className="text-red-600 mt-2 text-sm">{error}</div>}
     </form>
   );
 }

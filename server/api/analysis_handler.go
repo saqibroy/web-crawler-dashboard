@@ -14,7 +14,7 @@ func SubmitURL(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": "Invalid URL"})
+		c.JSON(400, gin.H{"error": "Invalid URL", "details": err.Error()})
 		return
 	}
 
@@ -25,7 +25,7 @@ func SubmitURL(c *gin.Context) {
 
 	result := db.DB.Create(&analysis)
 	if result.Error != nil {
-		c.JSON(500, gin.H{"error": "Failed to create analysis"})
+		c.JSON(500, gin.H{"error": "Failed to create analysis", "details": result.Error.Error()})
 		return
 	}
 
@@ -36,16 +36,19 @@ func SubmitURL(c *gin.Context) {
 }
 
 func GetAnalyses(c *gin.Context) {
-	// Pagination
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	if page < 1 {
+	page, err1 := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, err2 := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if err1 != nil || page < 1 {
 		page = 1
 	}
-	if limit < 1 {
+	if err2 != nil || limit < 1 {
 		limit = 20
 	}
 	var analyses []models.Analysis
-	db.DB.Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&analyses)
+	result := db.DB.Order("created_at desc").Offset((page - 1) * limit).Limit(limit).Find(&analyses)
+	if result.Error != nil {
+		c.JSON(500, gin.H{"error": "Failed to fetch analyses", "details": result.Error.Error()})
+		return
+	}
 	c.JSON(200, analyses)
 }
