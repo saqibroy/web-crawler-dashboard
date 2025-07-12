@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Link2, Search, X } from 'lucide-react';
 
-interface UrlFormProps {
+interface DashboardFormProps {
   // `onSubmit` will now be the `mutate` function from useMutation
   onSubmit: (url: string) => void;
   // `isLoading` will be `isPending` from useMutation
@@ -15,12 +15,12 @@ interface UrlFormProps {
   onError: (message: string | null) => void;
 }
 
-export default function UrlForm({
+export default function DashboardForm({
   onSubmit,
   isLoading,
   error: mutationError, // Renamed to avoid conflict with local error state
   onError,
-}: UrlFormProps) {
+}: DashboardFormProps) {
   const [url, setUrl] = useState('');
   const [localError, setLocalError] = useState<string | null>(null); // For local validation errors
 

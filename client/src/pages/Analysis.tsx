@@ -1,13 +1,16 @@
+// client/src/pages/AnalysisDetail.tsx
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchAnalyses } from '../services/api';
 import type { Analysis } from '../services/api';
 import { PieChart, Pie, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Cell, Legend } from 'recharts';
-import { ArrowLeft, Link as LinkIcon, ExternalLink, AlertCircle, FileText, XCircle } from 'lucide-react';
+import { ArrowLeft, Link as LinkIcon, ExternalLink, AlertCircle, FileText } from 'lucide-react';
+import { CHART_COLORS, getDetailStatusColor } from '../utils/analysisUtils';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import ErrorAlert from '../components/common/ErrorAlert';
+import EmptyState from '../components/common/EmptyState';
 
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
-
-export default function AnalysisDetail() {
+export default function Analysis() {
   const { id } = useParams();
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,49 +40,35 @@ export default function AnalysisDetail() {
     fetchAnalysis();
   }, [id]);
 
+  const BackToDashboardLink = () => (
+    <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6">
+      <ArrowLeft className="h-5 w-5 mr-2" />
+      Back to Dashboard
+    </Link>
+  );
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center"> {/* Simplified for App.tsx context */}
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading analysis details...</p>
-        </div>
+      <div className="flex items-center justify-center">
+        <LoadingSpinner message="Loading analysis details..." size="lg" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div> {/* Simplified for App.tsx context */}
-          <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6">
-            <ArrowLeft className="h-5 w-5 mr-2" />
-            Back to Dashboard
-          </Link>
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <XCircle className="h-6 w-6 text-red-400" />
-              </div>
-              <div className="ml-3">
-                <h3 className="text-lg font-medium text-red-800">Error Loading Analysis</h3>
-                <p className="text-red-700 mt-1">{error}</p>
-              </div>
-            </div>
-          </div>
+      <div>
+        <BackToDashboardLink />
+        <ErrorAlert message={error} onDismiss={() => setError(null)} />
       </div>
     );
   }
 
   if (!analysis) {
     return (
-      <div> {/* Simplified for App.tsx context */}
-        <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6">
-          <ArrowLeft className="h-5 w-5 mr-2" />
-          Back to Dashboard
-        </Link>
-        <div className="text-center py-12">
-          <p className="text-gray-500">No analysis data available.</p>
-        </div>
+      <div>
+        <BackToDashboardLink />
+        <EmptyState title="No analysis data available." message="The requested analysis could not be loaded or does not exist." />
       </div>
     );
   }
@@ -96,22 +85,10 @@ export default function AnalysisDetail() {
       value: value as number,
     })) : [];
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'error': return 'bg-red-100 text-red-800';
-      case 'processing': return 'bg-blue-100 text-blue-800';
-      case 'queued': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   return (
-    <div> {/* Outer div, now *within* the App.tsx max-width container */}
-      <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4">
-        <ArrowLeft className="h-5 w-5 mr-2" />
-        Back to Dashboard
-      </Link>
+    <div>
+      <BackToDashboardLink />
       <div className="flex items-center justify-between mb-6">
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-bold text-gray-900 truncate">
@@ -122,7 +99,7 @@ export default function AnalysisDetail() {
           </p>
         </div>
         <div className="ml-4 flex-shrink-0">
-          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(analysis.status)}`}>
+          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getDetailStatusColor(analysis.status)}`}>
             {analysis.status}
           </span>
         </div>
@@ -209,7 +186,7 @@ export default function AnalysisDetail() {
                 <PieChart>
                   <Pie data={linkData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
                     {linkData.map((_entry, index) => (
-                      <Cell key={`cell-link-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell key={`cell-link-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value: number) => `${value} links`} />
@@ -233,7 +210,7 @@ export default function AnalysisDetail() {
                   <Tooltip formatter={(value: number) => `${value} headings`} />
                   <Bar dataKey="value" fill="#3B82F6">
                     {headingData.map((_entry, index) => (
-                      <Cell key={`cell-heading-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell key={`cell-heading-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -254,7 +231,7 @@ export default function AnalysisDetail() {
               <div className="flex justify-between">
                 <dt className="text-sm font-medium text-gray-500">Status</dt>
                 <dd>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(analysis.status)}`}>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getDetailStatusColor(analysis.status)}`}>
                     {analysis.status}
                   </span>
                 </dd>
@@ -301,7 +278,7 @@ export default function AnalysisDetail() {
                   <div key={url} className="flex items-start space-x-3 p-3 bg-red-50 rounded-lg border border-red-200">
                     <div className="flex-shrink-0">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        {status}
+                        {status as string}
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
