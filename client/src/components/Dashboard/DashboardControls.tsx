@@ -1,14 +1,16 @@
 // client/src/pages/Dashboard/DashboardControls.tsx
 import type { ChangeEvent } from 'react';
-import { Search, Trash2, RotateCw } from 'lucide-react';
+import { Search, Trash2, RotateCw, XCircle } from 'lucide-react';
 
 interface DashboardControlsProps {
   selectedIdsCount: number;
   searchTerm: string;
   onSearchChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onDeleteSelected: () => void;
+  onStopSelected: () => void;
   onRerunSelected: () => void;
   disableControls: boolean;
+  canStopSelected: boolean; // New prop to control stop button state
 }
 
 export default function DashboardControls({
@@ -16,8 +18,10 @@ export default function DashboardControls({
   searchTerm,
   onSearchChange,
   onDeleteSelected,
+  onStopSelected,
   onRerunSelected,
   disableControls,
+  canStopSelected,
 }: DashboardControlsProps) {
   return (
     <div className="px-6 py-4 border-b border-gray-200">
@@ -30,6 +34,14 @@ export default function DashboardControls({
           >
             <Trash2 className="mr-2 h-4 w-4" />
             Delete ({selectedIdsCount})
+          </button>
+          <button
+            onClick={onStopSelected}
+            disabled={selectedIdsCount === 0 || disableControls || !canStopSelected}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-500 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <XCircle className="mr-2 h-4 w-4" />
+            Stop ({selectedIdsCount})
           </button>
           <button
             onClick={onRerunSelected}

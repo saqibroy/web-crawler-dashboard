@@ -51,6 +51,12 @@ export const getStatusDisplay = (status: AnalysisStatus): StatusDisplay => {
         className: `${baseClasses} bg-gray-100 text-gray-800`,
         text: 'Queued'
       };
+    case 'cancelled':
+      return {
+        icon: (<XCircle className="mr-1 h-3 w-3" />),
+        className: `${baseClasses} bg-gray-200 text-gray-700`,
+        text: 'Cancelled'
+      };
     default:
       return {
         icon: (<Info className="mr-1 h-3 w-3" />),
@@ -63,7 +69,7 @@ export const getStatusDisplay = (status: AnalysisStatus): StatusDisplay => {
 /**
  * Type definition for analysis table sort keys.
  */
-export type SortKey = keyof Pick<Analysis, 'url' | 'status' | 'title' | 'html_version' | 'internal_links' | 'external_links'>;
+export type SortKey = 'url' | 'status' | 'title' | 'html_version' | 'internal_links' | 'external_links' | 'created_at' | 'updated_at';
 
 /**
  * Compares two analysis objects based on a given sort key and direction.
@@ -111,6 +117,7 @@ export const getDetailStatusColor = (status: AnalysisStatus) => {
     case 'failed': return 'bg-red-100 text-red-800';
     case 'processing': return 'bg-blue-100 text-blue-800';
     case 'queued': return 'bg-yellow-100 text-yellow-800';
+    case 'cancelled': return 'bg-gray-200 text-gray-700';
     default: return 'bg-gray-100 text-gray-800';
   }
 };

@@ -34,27 +34,29 @@ api.interceptors.response.use(
 );
 
 // Types
-export type AnalysisStatus = 'queued' | 'processing' | 'completed' | 'failed';
+export type AnalysisStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
 
 export type Analysis = {
   id: string;
   url: string;
   status: AnalysisStatus;
-  title?: string;
-  html_version?: string;
-  headings?: Record<string, number>; // Corrected type for headings
-  internal_links?: number;
-  external_links?: number;
-  broken_links?: Record<string, string>; // Corrected type for broken_links
-  has_login_form?: boolean;
+  html_version: string;
+  title: string;
+  headings: Record<string, number>;
+  internal_links: number;
+  external_links: number;
+  broken_links: Record<string, string>;
+  has_login_form: boolean;
   created_at: string;
-  completed_at?: string;
+  updated_at: string;
+  completed_at: string | null;
 };
 
 // Assuming the API returns a structure like { data: Analysis[], total_count: number }
 export type GetAnalysesResponse = {
   data: Analysis[];
   total_count: number;
+  status_counts: Record<string, number>;
 };
 
 // Auth token function (not directly used with useQuery/useMutation but kept for login flow)
@@ -66,19 +68,19 @@ export const getAuthToken = async (): Promise<{ access_token: string; token_type
 
 // Query function for fetching analyses
 export const fetchAnalyses = async (
-  page: number = 1,
-  limit: number = 10,
+  page: number,
+  limit: number,
   search?: string,
-  sortBy?: keyof Analysis,
-  sortOrder?: 'asc' | 'desc'
+  sortBy?: string,
+  sortOrder?: string,
+  status?: string
 ): Promise<GetAnalysesResponse> => {
   const params: Record<string, any> = { page, limit };
   if (search) params.search = search;
-  if (sortBy) params.sort_by = sortBy; // Backend typically uses snake_case for query params
+  if (sortBy) params.sort_by = sortBy;
   if (sortOrder) params.sort_order = sortOrder;
-
-  const response = await api.get('/analyses', { params });
-  return response.data;
+  if (status) params.status = status;
+  return api.get('/analyses', { params }).then(res => res.data);
 };
 
 // Mutation function for submitting a URL
@@ -86,9 +88,17 @@ export const createAnalysis = async (url: string): Promise<Analysis> =>
   api.post('/analyses', { url }).then(res => res.data);
 
 // Mutation function for deleting analyses
-export const removeAnalyses = async (ids: string[]): Promise<void> =>
-  api.delete('/analyses', { data: { ids } }).then(res => res.data); // Assuming it returns empty or success message
+export const deleteAnalyses = async (ids: string[]): Promise<void> =>
+  api.delete('/analyses', { data: { ids } }).then(res => res.data);
+
+// Mutation function for stopping analyses
+export const stopAnalyses = async (ids: string[]): Promise<void> =>
+  api.post('/analyses/stop', { ids }).then(res => res.data);
 
 // Mutation function for rerunning analyses
 export const reRunAnalyses = async (ids: string[]): Promise<void> =>
   api.post('/analyses/rerun', { ids }).then(res => res.data); // Assuming it returns empty or success message
+
+// Fetch a single analysis by ID
+export const fetchSingleAnalysis = async (id: string): Promise<Analysis> =>
+  api.get(`/analyses/${id}`).then(res => res.data);

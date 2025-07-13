@@ -1,7 +1,7 @@
 // client/src/pages/AnalysisDetail.tsx
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { fetchAnalyses } from '../services/api';
+import { fetchSingleAnalysis } from '../services/api';
 import type { Analysis } from '../services/api';
 import { PieChart, Pie, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Cell, Legend } from 'recharts';
 import { ArrowLeft, Link as LinkIcon, ExternalLink, AlertCircle, FileText } from 'lucide-react';
@@ -21,16 +21,12 @@ export default function Analysis() {
       setIsLoading(true);
       setError(null);
       try {
-        // In a real app, you'd likely have a specific API endpoint to get a single analysis by ID.
-        // For this example, we're still fetching all and filtering, but keep this in mind.
-        const response = await fetchAnalyses(1, 100);
-        const arr = Array.isArray(response.data) ? response.data : [];
-        const found = arr.find((a: Analysis) => a.id === id);
-        if (found) {
-          setAnalysis(found);
-        } else {
-          setError("Analysis not found.");
+        if (!id) {
+          setError("No analysis ID provided.");
+          return;
         }
+        const analysisData = await fetchSingleAnalysis(id);
+        setAnalysis(analysisData);
       } catch (err: any) {
         setError(err.response?.data?.error || err.message || "Failed to load analysis details.");
       } finally {
@@ -73,12 +69,25 @@ export default function Analysis() {
     );
   }
 
+  // Clear fields for cancelled analyses
+  const displayAnalysis = analysis.status === 'cancelled' ? {
+    ...analysis,
+    title: '',
+    html_version: '',
+    internal_links: 0,
+    external_links: 0,
+    broken_links: {},
+    headings: {},
+    has_login_form: false,
+    completed_at: null,
+  } : analysis;
+
   const linkData = [
-    { name: 'Internal Links', value: analysis.internal_links || 0 },
-    { name: 'External Links', value: analysis.external_links || 0 },
+    { name: 'Internal Links', value: displayAnalysis.internal_links || 0 },
+    { name: 'External Links', value: displayAnalysis.external_links || 0 },
   ];
 
-  const headingData = analysis.headings ? Object.entries(analysis.headings)
+  const headingData = displayAnalysis.headings ? Object.entries(displayAnalysis.headings)
     .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
     .map(([name, value]) => ({
       name: name.toUpperCase(),
@@ -92,15 +101,22 @@ export default function Analysis() {
       <div className="flex items-center justify-between mb-6">
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-bold text-gray-900 truncate">
-            {analysis.title || 'Analysis Details'}
+            {displayAnalysis.title || 'Analysis Details'}
           </h1>
           <p className="mt-1 text-sm text-gray-500 break-all">
-            {analysis.url}
+            {displayAnalysis.url}
           </p>
+          {displayAnalysis.status === 'cancelled' && (
+            <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-sm text-yellow-800">
+                This analysis was cancelled and no data is available.
+              </p>
+            </div>
+          )}
         </div>
         <div className="ml-4 flex-shrink-0">
-          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getDetailStatusColor(analysis.status)}`}>
-            {analysis.status}
+          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getDetailStatusColor(displayAnalysis.status)}`}>
+            {displayAnalysis.status}
           </span>
         </div>
       </div>
@@ -117,7 +133,7 @@ export default function Analysis() {
             <div className="ml-5 w-0 flex-1">
               <dl>
                 <dt className="text-sm font-medium text-gray-500 truncate">Internal Links</dt>
-                <dd className="text-lg font-semibold text-gray-900">{analysis.internal_links || 0}</dd>
+                <dd className="text-lg font-semibold text-gray-900">{displayAnalysis.internal_links || 0}</dd>
               </dl>
             </div>
           </div>
@@ -133,7 +149,7 @@ export default function Analysis() {
             <div className="ml-5 w-0 flex-1">
               <dl>
                 <dt className="text-sm font-medium text-gray-500 truncate">External Links</dt>
-                <dd className="text-lg font-semibold text-gray-900">{analysis.external_links || 0}</dd>
+                <dd className="text-lg font-semibold text-gray-900">{displayAnalysis.external_links || 0}</dd>
               </dl>
             </div>
           </div>
@@ -150,7 +166,7 @@ export default function Analysis() {
               <dl>
                 <dt className="text-sm font-medium text-gray-500 truncate">Broken Links</dt>
                 <dd className="text-lg font-semibold text-gray-900">
-                  {analysis.broken_links ? Object.keys(analysis.broken_links).length : 0}
+                  {displayAnalysis.broken_links && Object.keys(displayAnalysis.broken_links).length > 0 ? Object.keys(displayAnalysis.broken_links).length : 0}
                 </dd>
               </dl>
             </div>
@@ -167,7 +183,7 @@ export default function Analysis() {
             <div className="ml-5 w-0 flex-1">
               <dl>
                 <dt className="text-sm font-medium text-gray-500 truncate">HTML Version</dt>
-                <dd className="text-lg font-semibold text-gray-900">{analysis.html_version || 'N/A'}</dd>
+                <dd className="text-lg font-semibold text-gray-900">{displayAnalysis.html_version || 'N/A'}</dd>
               </dl>
             </div>
           </div>
@@ -231,50 +247,50 @@ export default function Analysis() {
               <div className="flex justify-between">
                 <dt className="text-sm font-medium text-gray-500">Status</dt>
                 <dd>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getDetailStatusColor(analysis.status)}`}>
-                    {analysis.status}
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getDetailStatusColor(displayAnalysis.status)}`}>
+                    {displayAnalysis.status}
                   </span>
                 </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-sm font-medium text-gray-500">HTML Version</dt>
-                <dd className="text-sm text-gray-900">{analysis.html_version || 'N/A'}</dd>
+                <dd className="text-sm text-gray-900">{displayAnalysis.html_version || 'N/A'}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-sm font-medium text-gray-500">Login Form</dt>
                 <dd className="text-sm text-gray-900">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    analysis.has_login_form ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    displayAnalysis.has_login_form ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                   }`}>
-                    {analysis.has_login_form ? 'Detected' : 'Not Detected'}
+                    {displayAnalysis.has_login_form ? 'Detected' : 'Not Detected'}
                   </span>
                 </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-sm font-medium text-gray-500">Created</dt>
-                <dd className="text-sm text-gray-900">{new Date(analysis.created_at).toLocaleString()}</dd>
+                <dd className="text-sm text-gray-900">{new Date(displayAnalysis.created_at).toLocaleString()}</dd>
               </div>
-              {analysis.completed_at && (
+              {displayAnalysis.completed_at && (
                 <div className="flex justify-between">
                   <dt className="text-sm font-medium text-gray-500">Completed</dt>
-                  <dd className="text-sm text-gray-900">{new Date(analysis.completed_at).toLocaleString()}</dd>
+                  <dd className="text-sm text-gray-900">{new Date(displayAnalysis.completed_at).toLocaleString()}</dd>
                 </div>
               )}
             </dl>
           </div>
         </div>
 
-        {analysis.broken_links && Object.keys(analysis.broken_links).length > 0 && (
+        {displayAnalysis.broken_links && Object.keys(displayAnalysis.broken_links).length > 0 && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-medium text-gray-900">Broken Links</h3>
               <p className="mt-1 text-sm text-gray-500">
-                {Object.keys(analysis.broken_links).length} broken link(s) found
+                {Object.keys(displayAnalysis.broken_links).length} broken link(s) found
               </p>
             </div>
             <div className="p-6">
               <div className="space-y-3 max-h-64 overflow-y-auto">
-                {Object.entries(analysis.broken_links).map(([url, status]) => (
+                {Object.entries(displayAnalysis.broken_links || {}).map(([url, status]) => (
                   <div key={url} className="flex items-start space-x-3 p-3 bg-red-50 rounded-lg border border-red-200">
                     <div className="flex-shrink-0">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">

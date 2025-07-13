@@ -48,6 +48,11 @@ func main() {
 		log.Fatalf("AutoMigrate failed: %v", err)
 	}
 
+	// Update status column to allow 'cancelled' value
+	if err := updateStatusColumn(); err != nil {
+		log.Printf("Warning: Failed to update status column: %v", err)
+	}
+
 	worker.StartWorker()
 
 	// Public routes
@@ -62,6 +67,10 @@ func main() {
 	{
 		authGroup.POST("/analyses", api.SubmitURL)
 		authGroup.GET("/analyses", api.GetAnalyses)
+		authGroup.DELETE("/analyses", api.DeleteAnalyses)
+		authGroup.POST("/analyses/stop", api.StopAnalyses)
+		authGroup.POST("/analyses/rerun", api.RerunAnalyses)
+		authGroup.GET("/analyses/:id", api.GetSingleAnalysis)
 	}
 
 	port := os.Getenv("PORT")
@@ -96,4 +105,10 @@ func generateTokenHandler(c *gin.Context) {
 		"access_token": token,
 		"expires_in":   3600, // 1 hour in seconds
 	})
+}
+
+func updateStatusColumn() error {
+	// For MySQL, we need to manually update the ENUM constraint
+	// This is a simple approach - in production you'd want proper migrations
+	return db.DB.Exec("ALTER TABLE analyses MODIFY COLUMN status ENUM('queued', 'processing', 'completed', 'failed', 'cancelled') DEFAULT 'queued'").Error
 }

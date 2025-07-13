@@ -17,6 +17,7 @@ const (
 	Processing AnalysisStatus = "processing"
 	Completed  AnalysisStatus = "completed"
 	Failed     AnalysisStatus = "failed"
+	Cancelled  AnalysisStatus = "cancelled"
 )
 
 type Analysis struct {
@@ -31,6 +32,7 @@ type Analysis struct {
 	BrokenLinks   JSONMap        `gorm:"type:json" json:"broken_links"` // {"url": "status"}
 	HasLoginForm  bool           `json:"has_login_form"`
 	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
 	CompletedAt   *time.Time     `json:"completed_at"`
 }
 

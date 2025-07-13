@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { getAuthToken } from './services/api';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Dashboard from './pages/Dashboard'; // Your main dashboard component
-import AnalysisDetail from './pages/AnalysisDetail'; // Your nested detail page
+import Analysis from './pages/Analysis'; // Your nested detail page
 
 function App() {
   useEffect(() => {
@@ -35,7 +35,7 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/analysis/:id" element={<AnalysisDetail />} />
+            <Route path="/analysis/:id" element={<Analysis />} />
           </Routes>
         </div>
       </main>

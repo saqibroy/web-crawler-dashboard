@@ -50,7 +50,16 @@ export default function DashboardTableRow({ analysis, isSelected, onToggleSelect
       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
         <Link
           to={`/analysis/${analysis.id}`}
-          className="inline-flex items-center text-blue-600 hover:text-blue-900 transition-colors"
+          className={`inline-flex items-center transition-colors ${
+            analysis.status === 'cancelled' || analysis.status === 'queued' || analysis.status === 'processing' || analysis.status === 'failed'
+              ? 'text-gray-400 cursor-not-allowed pointer-events-none'
+              : 'text-blue-600 hover:text-blue-900'
+          }`}
+          onClick={(e) => {
+            if (analysis.status === 'cancelled' || analysis.status === 'queued' || analysis.status === 'processing' || analysis.status === 'failed') {
+              e.preventDefault();
+            }
+          }}
         >
           View Details
           <ChevronRight className="ml-1 h-4 w-4" />

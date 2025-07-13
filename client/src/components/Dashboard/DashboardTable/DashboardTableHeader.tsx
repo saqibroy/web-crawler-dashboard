@@ -1,9 +1,7 @@
 // client/src/components/AnalysisTable/TableHeader.tsx
 import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import type { Analysis } from '../../../services/api';
-
-// Define SortKey locally
-export type SortKey = 'url' | 'status' | 'title' | 'html_version' | 'internal_links' | 'external_links';
+import type { SortKey } from '../../../utils/analysisUtils';
 
 interface DashboardTableHeaderProps {
   analyses: Analysis[];

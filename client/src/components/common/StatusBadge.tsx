@@ -40,6 +40,12 @@ const getStatusDisplay = (status: AnalysisStatus): StatusDisplay => {
         className: `${baseClasses} bg-gray-100 text-gray-800`,
         text: 'Queued'
       };
+    case 'cancelled':
+      return {
+        icon: (<XCircle className="mr-1 h-3 w-3" />),
+        className: `${baseClasses} bg-orange-100 text-orange-800`,
+        text: 'Cancelled'
+      };
     default:
       return {
         icon: (<Info className="mr-1 h-3 w-3" />),

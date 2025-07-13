@@ -51,10 +51,19 @@ export default function DashboardTableMobile({ analysis, isSelected, onToggleSel
           </div>
         </div>
 
-        <div className="flex justify-end pt-3 border-t border-gray-200">
+        <div className="flex justify-end">
           <Link
             to={`/analysis/${analysis.id}`}
-            className="inline-flex items-center text-blue-600 hover:text-blue-900 text-sm font-medium transition-colors"
+            className={`inline-flex items-center text-sm font-medium transition-colors ${
+              analysis.status === 'cancelled' || analysis.status === 'queued' || analysis.status === 'processing' || analysis.status === 'failed'
+                ? 'text-gray-400 cursor-not-allowed pointer-events-none'
+                : 'text-blue-600 hover:text-blue-900'
+            }`}
+            onClick={(e) => {
+              if (analysis.status === 'cancelled' || analysis.status === 'queued' || analysis.status === 'processing' || analysis.status === 'failed') {
+                e.preventDefault();
+              }
+            }}
           >
             View Details
             <ChevronRight className="ml-1 h-4 w-4" />

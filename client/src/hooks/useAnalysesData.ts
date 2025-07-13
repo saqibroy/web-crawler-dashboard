@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchAnalyses,
   createAnalysis,
-  removeAnalyses,
   reRunAnalyses,
+  stopAnalyses,
+  deleteAnalyses,
 } from '../services/api';
-import type { Analysis, GetAnalysesResponse } from '../services/api';
+import type { Analysis } from '../services/api';
 
 // Define types for query parameters
 type GetAnalysesParams = {
@@ -15,17 +16,24 @@ type GetAnalysesParams = {
   search?: string;
   sortBy?: keyof Analysis;
   sortOrder?: 'asc' | 'desc';
+  status?: string;
+};
+
+export type GetAnalysesResponse = {
+  data: Analysis[];
+  total_count: number;
+  status_counts: Record<string, number>;
 };
 
 /**
  * Custom hook for fetching analyses data.
  */
 export const useAnalysesQuery = (params: GetAnalysesParams) => {
-  const { page, limit, search, sortBy, sortOrder } = params;
+  const { page, limit, search, sortBy, sortOrder, status } = params;
 
   return useQuery<GetAnalysesResponse, Error>({
-    queryKey: ['analyses', page, limit, search, sortBy, sortOrder],
-    queryFn: () => fetchAnalyses(page, limit, search, sortBy, sortOrder),
+    queryKey: ['analyses', page, limit, search, sortBy, sortOrder, status],
+    queryFn: () => fetchAnalyses(page, limit, search, sortBy, sortOrder, status),
     placeholderData: (previousData) => previousData, // Keep previous data while fetching new
     refetchInterval: (query) => {
       // Only refetch if there are active (queued or processing) analyses
@@ -51,19 +59,6 @@ export const useAddUrlMutation = () => {
 };
 
 /**
- * Custom hook for deleting selected analyses.
- */
-export const useDeleteAnalysesMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation<void, Error, string[]>({ // <returnType, errorType, variablesType>
-    mutationFn: removeAnalyses,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['analyses'] }); // Invalidate list to refetch
-    },
-  });
-};
-
-/**
  * Custom hook for rerunning selected analyses.
  */
 export const useRerunAnalysesMutation = () => {
@@ -72,6 +67,29 @@ export const useRerunAnalysesMutation = () => {
     mutationFn: reRunAnalyses,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['analyses'] }); // Invalidate list to refetch
+    },
+  });
+};
+
+/**
+ * Custom hook for deleting selected analyses.
+ */
+export const useDeleteAnalysesMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string[]>({
+    mutationFn: deleteAnalyses,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['analyses'] });
+    },
+  });
+};
+
+export const useStopAnalysesMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string[]>({
+    mutationFn: stopAnalyses,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['analyses'] });
     },
   });
 };

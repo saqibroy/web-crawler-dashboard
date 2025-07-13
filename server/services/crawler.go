@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/url"
@@ -12,7 +13,13 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func Crawl(targetURL string) (*models.Analysis, error) {
+func Crawl(ctx context.Context, targetURL string) (*models.Analysis, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	resp, err := http.Get(targetURL)
 	if err != nil {
 		return nil, err
@@ -21,6 +28,12 @@ func Crawl(targetURL string) (*models.Analysis, error) {
 
 	if resp.StatusCode != 200 {
 		return nil, errors.New("non-200 status code")
+	}
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
 	}
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
@@ -32,7 +45,6 @@ func Crawl(targetURL string) (*models.Analysis, error) {
 		URL: targetURL,
 	}
 
-	// Parse the target URL to get the base domain
 	parsedURL, err := url.Parse(targetURL)
 	if err != nil {
 		return nil, err
@@ -52,11 +64,15 @@ func Crawl(targetURL string) (*models.Analysis, error) {
 	// Count headings
 	headings := make(map[string]int)
 	for i := 1; i <= 6; i++ {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
 		tag := "h" + string(rune('0'+i))
 		count := doc.Find(tag).Length()
 		headings[tag] = count
 	}
-	// Convert map[string]int to map[string]interface{} for JSONMap
 	headingsMap := make(map[string]interface{})
 	for k, v := range headings {
 		headingsMap[k] = v
@@ -66,36 +82,32 @@ func Crawl(targetURL string) (*models.Analysis, error) {
 	// Check for login form
 	analysis.HasLoginForm = doc.Find("input[type='password']").Length() > 0
 
-	// Count internal vs external links and check for broken links
 	internalCount := 0
 	externalCount := 0
 	brokenLinks := make(map[string]interface{})
 
-	doc.Find("a[href]").Each(func(_ int, s *goquery.Selection) {
+	doc.Find("a[href]").EachWithBreak(func(_ int, s *goquery.Selection) bool {
+		select {
+		case <-ctx.Done():
+			return false // break
+		default:
+		}
 		href, exists := s.Attr("href")
 		if !exists || href == "" || strings.HasPrefix(href, "#") {
-			return
+			return true
 		}
-
-		// Parse the link URL
 		linkURL, err := url.Parse(href)
 		if err != nil {
-			return
+			return true
 		}
-
-		// If it's a relative URL, make it absolute
 		if linkURL.Host == "" {
 			linkURL = parsedURL.ResolveReference(linkURL)
 		}
-
-		// Check if it's internal or external
 		if linkURL.Host == baseDomain {
 			internalCount++
 		} else {
 			externalCount++
 		}
-
-		// Check if link is broken (synchronously for simplicity)
 		client := &http.Client{
 			Timeout: 3 * time.Second,
 		}
@@ -107,11 +119,18 @@ func Crawl(targetURL string) (*models.Analysis, error) {
 			}
 			brokenLinks[linkURL.String()] = status
 		}
+		return true
 	})
 
 	analysis.InternalLinks = internalCount
 	analysis.ExternalLinks = externalCount
 	analysis.BrokenLinks = brokenLinks
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
 
 	return analysis, nil
 }

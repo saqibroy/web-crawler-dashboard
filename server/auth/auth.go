@@ -53,7 +53,8 @@ func AuthMiddleware() gin.HandlerFunc {
 	var once sync.Once
 	var limiter *rate.Limiter
 	once.Do(func() {
-		limiter = rate.NewLimiter(rate.Every(time.Minute/10), 10)
+		// Increased from 10 to 1000 requests per minute (much more reasonable for dashboard)
+		limiter = rate.NewLimiter(rate.Every(time.Minute/1000), 1000)
 	})
 	return func(c *gin.Context) {
 		if !limiter.Allow() {

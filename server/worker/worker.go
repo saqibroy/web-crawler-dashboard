@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"context"
 	"log"
 	"time"
 
@@ -8,6 +9,15 @@ import (
 	"github.com/saqibroy/web-crawler-dashboard/server/models"
 	"github.com/saqibroy/web-crawler-dashboard/server/services"
 )
+
+var cancelFuncs = make(map[string]context.CancelFunc)
+
+// StopAnalysis allows external callers to cancel an analysis by ID
+func StopAnalysis(id string) {
+	if cancel, ok := cancelFuncs[id]; ok {
+		cancel()
+	}
+}
 
 func StartWorker() {
 	go func() {
@@ -22,12 +32,37 @@ func StartWorker() {
 				continue
 			}
 
+			// Check if analysis was cancelled before starting
+			db.DB.First(&analysis, "id = ?", analysis.ID)
+			if analysis.Status == models.Cancelled {
+				continue
+			}
+
 			// Update status to processing
 			db.DB.Model(&analysis).Update("status", models.Processing)
 
-			// Process analysis
-			analysisResult, err := services.Crawl(analysis.URL)
+			ctx, cancel := context.WithCancel(context.Background())
+			cancelFuncs[analysis.ID] = cancel
+
+			analysisResult, err := services.Crawl(ctx, analysis.URL)
+			delete(cancelFuncs, analysis.ID)
+
 			if err != nil {
+				if err == context.Canceled {
+					db.DB.Model(&analysis).Updates(map[string]interface{}{
+						"status":         models.Cancelled,
+						"title":          "",
+						"html_version":   "",
+						"headings":       "{}",
+						"internal_links": 0,
+						"external_links": 0,
+						"broken_links":   "{}",
+						"has_login_form": false,
+						"completed_at":   nil,
+					})
+					log.Printf("Analysis %s cancelled", analysis.ID)
+					continue
+				}
 				log.Printf("Crawl failed for %s: %v", analysis.URL, err)
 				db.DB.Model(&analysis).Update("status", models.Failed)
 				continue
