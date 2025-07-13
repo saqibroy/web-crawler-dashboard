@@ -6,6 +6,7 @@ import {
   reRunAnalyses,
   stopAnalyses,
   deleteAnalyses,
+  fetchSingleAnalysis,
 } from '../services/api';
 import type { Analysis } from '../services/api';
 
@@ -90,6 +91,24 @@ export const useStopAnalysesMutation = () => {
     mutationFn: stopAnalyses,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['analyses'] });
+    },
+  });
+};
+
+/**
+ * Custom hook for fetching a single analysis by ID.
+ */
+export const useSingleAnalysisQuery = (id?: string) => {
+  return useQuery<Analysis, Error>({
+    queryKey: ['analysis', id],
+    queryFn: () => {
+      if (!id) throw new Error('No analysis ID provided');
+      return fetchSingleAnalysis(id);
+    },
+    enabled: !!id,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === 'queued' || status === 'processing' ? 5000 : false;
     },
   });
 };

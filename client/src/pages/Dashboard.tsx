@@ -18,7 +18,6 @@ import ConfirmationModal from '../components/common/ConfirmationModal';
 import DashboardStats from '../components/Dashboard/DashboardStats';
 import DashboardControls from '../components/Dashboard/DashboardControls';
 import DashboardPagination from '../components/Dashboard/DashboardPagination';
-import { fetchSingleAnalysis } from '../services/api';
 
 
 export default function Dashboard() {
@@ -50,31 +49,12 @@ export default function Dashboard() {
   const stopAnalysesMutation = useStopAnalysesMutation();
   const rerunAnalysesMutation = useRerunAnalysesMutation();
 
-  // Check if selected analyses can be stopped (only queued or processing)
-  const [selectedStatuses, setSelectedStatuses] = useState<Record<string, string>>({});
-  useEffect(() => {
-    const fetchStatuses = async () => {
-      const missingIds = selectedIds.filter(id => !analyses.find(a => a.id === id));
-      const statusMap: Record<string, string> = {};
-      // Get statuses from current page
-      analyses.forEach(a => {
-        if (selectedIds.includes(a.id)) statusMap[a.id] = a.status;
-      });
-      // Fetch statuses for missing IDs
-      await Promise.all(missingIds.map(async id => {
-        try {
-          const analysis = await fetchSingleAnalysis(id);
-          statusMap[id] = analysis.status;
-        } catch {}
-      }));
-      setSelectedStatuses(statusMap);
-    };
-    if (selectedIds.length > 0) fetchStatuses();
-    else setSelectedStatuses({});
-  }, [selectedIds, analyses]);
-
-  const canStopSelected = selectedIds.length > 0 && Object.values(selectedStatuses).length === selectedIds.length &&
-    Object.values(selectedStatuses).every(status => status === 'queued' || status === 'processing');
+  // Check if selected analyses can be stopped (only queued or processing, and only for visible analyses)
+  const visibleSelectedAnalyses = analyses.filter(a => selectedIds.includes(a.id));
+  const canStopSelected =
+    selectedIds.length > 0 &&
+    visibleSelectedAnalyses.length === selectedIds.length &&
+    visibleSelectedAnalyses.every(a => a.status === 'queued' || a.status === 'processing');
 
   // Handle errors from query and mutations
   useEffect(() => {

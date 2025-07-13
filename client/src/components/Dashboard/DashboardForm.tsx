@@ -20,7 +20,7 @@ export default function DashboardForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(url);
-    setUrl(''); // Clear input optimistically or on success (depending on UX preference)
+    setUrl('');
   };
 
 

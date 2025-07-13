@@ -35,6 +35,9 @@ export default function DashboardTable({
     ? [...analyses].sort((a, b) => sortAnalyses(a, b, sortConfig.key, sortConfig.direction))
     : analyses; // Use the original order if no sort config
 
+  // Subtle overlay spinner for background refetches
+  const showOverlaySpinner = isLoading && analyses.length > 0;
+
   if (isLoading) {
     return <LoadingSpinner message="Loading analyses..." />;
   }
@@ -49,7 +52,12 @@ export default function DashboardTable({
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
+      {showOverlaySpinner && (
+        <div className="absolute inset-0 bg-white bg-opacity-60 flex items-center justify-center z-10">
+          <LoadingSpinner size="md" message="Refreshing..." />
+        </div>
+      )}
       {/* Desktop Table */}
       <table className="min-w-full divide-y divide-gray-200 hidden md:table table-auto">
         <DashboardTableHeader

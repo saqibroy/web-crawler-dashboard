@@ -1,7 +1,7 @@
 // client/src/pages/AnalysisDetail.tsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { fetchSingleAnalysis } from '../services/api';
+import { useSingleAnalysisQuery } from '../hooks/useAnalysesData';
 import type { Analysis } from '../services/api';
 import { PieChart, Pie, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Cell, Legend } from 'recharts';
 import { ArrowLeft, Link as LinkIcon, ExternalLink, AlertCircle, FileText } from 'lucide-react';
@@ -12,29 +12,8 @@ import EmptyState from '../components/common/EmptyState';
 
 export default function Analysis() {
   const { id } = useParams();
-  const [analysis, setAnalysis] = useState<Analysis | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchAnalysis = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        if (!id) {
-          setError("No analysis ID provided.");
-          return;
-        }
-        const analysisData = await fetchSingleAnalysis(id);
-        setAnalysis(analysisData);
-      } catch (err: any) {
-        setError(err.response?.data?.error || err.message || "Failed to load analysis details.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchAnalysis();
-  }, [id]);
+  const { data: analysis, isLoading, error } = useSingleAnalysisQuery(id);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const BackToDashboardLink = () => (
     <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6">
@@ -51,11 +30,11 @@ export default function Analysis() {
     );
   }
 
-  if (error) {
+  if (error || localError) {
     return (
       <div>
         <BackToDashboardLink />
-        <ErrorAlert message={error} onDismiss={() => setError(null)} />
+        <ErrorAlert message={error?.message || localError || ''} onDismiss={() => setLocalError(null)} />
       </div>
     );
   }
