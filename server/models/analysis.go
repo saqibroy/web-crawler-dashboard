@@ -44,6 +44,47 @@ func (a *Analysis) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+// MarkAsProcessing sets the analysis status to processing.
+func (a *Analysis) MarkAsProcessing(db *gorm.DB) error {
+	a.Status = Processing
+	return db.Save(a).Error
+}
+
+// MarkAsCompleted sets the analysis status to completed and updates result fields.
+func (a *Analysis) MarkAsCompleted(db *gorm.DB, result *Analysis) error {
+	a.Status = Completed
+	a.HTMLVersion = result.HTMLVersion
+	a.Title = result.Title
+	a.Headings = result.Headings
+	a.InternalLinks = result.InternalLinks
+	a.ExternalLinks = result.ExternalLinks
+	a.BrokenLinks = result.BrokenLinks
+	a.HasLoginForm = result.HasLoginForm
+	now := time.Now()
+	a.CompletedAt = &now
+	return db.Save(a).Error
+}
+
+// MarkAsFailed sets the analysis status to failed.
+func (a *Analysis) MarkAsFailed(db *gorm.DB) error {
+	a.Status = Failed
+	return db.Save(a).Error
+}
+
+// MarkAsCancelled sets the analysis status to cancelled and clears result fields.
+func (a *Analysis) MarkAsCancelled(db *gorm.DB) error {
+	a.Status = Cancelled
+	a.Title = ""
+	a.HTMLVersion = ""
+	a.Headings = JSONMap{}
+	a.InternalLinks = 0
+	a.ExternalLinks = 0
+	a.BrokenLinks = JSONMap{}
+	a.HasLoginForm = false
+	a.CompletedAt = nil
+	return db.Save(a).Error
+}
+
 // JSONMap handles JSON data for GORM
 // Implements sql.Scanner and driver.Valuer
 // Use map[string]interface{} for flexible JSON storage

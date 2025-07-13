@@ -42,10 +42,10 @@ export type Analysis = {
   status: AnalysisStatus;
   html_version: string;
   title: string;
-  headings: Record<string, number>;
+  headings: Record<string, number> | null; // Can be null if analysis is cancelled or no headings
   internal_links: number;
   external_links: number;
-  broken_links: Record<string, string>;
+  broken_links: Record<string, string> | null; // Can be null if analysis is cancelled or no broken links
   has_login_form: boolean;
   created_at: string;
   updated_at: string;

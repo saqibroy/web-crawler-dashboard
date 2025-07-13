@@ -134,30 +134,19 @@ func StopAnalyses(c *gin.Context) {
 	}
 
 	// Update status to cancelled and clear all analysis data for queued and processing analyses
-	result := db.DB.Model(&models.Analysis{}).
-		Where("id IN ? AND (status = ? OR status = ?)", req.IDs, models.Queued, models.Processing).
-		Updates(map[string]interface{}{
-			"status":         models.Cancelled,
-			"title":          "",
-			"html_version":   "",
-			"headings":       "{}",
-			"internal_links": 0,
-			"external_links": 0,
-			"broken_links":   "{}",
-			"has_login_form": false,
-			"completed_at":   nil,
-		})
-	if result.Error != nil {
-		c.JSON(500, gin.H{"error": "Failed to stop analyses", "details": result.Error.Error()})
-		return
-	}
-
-	// Try to stop in-progress analyses
+	var stopped int64 = 0
 	for _, id := range req.IDs {
+		var analysis models.Analysis
+		result := db.DB.Where("id = ? AND (status = ? OR status = ?)", id, models.Queued, models.Processing).First(&analysis)
+		if result.Error == nil {
+			if err := analysis.MarkAsCancelled(db.DB); err == nil {
+				stopped++
+			}
+		}
 		worker.StopAnalysis(id)
 	}
 
-	c.JSON(200, gin.H{"stopped": result.RowsAffected})
+	c.JSON(200, gin.H{"stopped": stopped})
 }
 
 // Rerun analyses by IDs (set status to queued, skip if already processing)

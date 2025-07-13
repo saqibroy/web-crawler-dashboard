@@ -83,3 +83,8 @@ curl -H "Authorization: Bearer <token>" \
 
 - The server uses GORM's `AutoMigrate` for easy local setup.
 - For production, consider using manual migrations and more secure secret management.
+
+## Production Considerations
+
+- **JWT Secret:** Always use a strong, randomly generated value for `JWT_SECRET` in production. Never use the default or a weak secret. Consider using a secrets manager or environment variable management tool.
+- **Database Migrations:** For production deployments, use a proper database migration tool (such as [golang-migrate/migrate](https://github.com/golang-migrate/migrate) or [pressly/goose](https://github.com/pressly/goose)) instead of relying solely on GORM's `AutoMigrate` or manual `ALTER TABLE` commands. This ensures safe, repeatable, and versioned schema changes.

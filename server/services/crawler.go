@@ -20,7 +20,8 @@ func Crawl(ctx context.Context, targetURL string) (*models.Analysis, error) {
 	default:
 	}
 
-	resp, err := http.Get(targetURL)
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get(targetURL)
 	if err != nil {
 		return nil, err
 	}
@@ -51,12 +52,20 @@ func Crawl(ctx context.Context, targetURL string) (*models.Analysis, error) {
 	}
 	baseDomain := parsedURL.Host
 
-	// Get HTML version
-	docType := doc.Find("html").AttrOr("version", "")
-	if docType == "" {
-		docType = "HTML5" // Default assumption
+	// Improved HTML version detection
+	htmlVersion := "Unknown"
+	if doc.Find("html").Length() > 0 {
+		// Check for <!DOCTYPE html> in the raw HTML
+		if strings.Contains(strings.ToLower(doc.Text()), "<!doctype html>") {
+			htmlVersion = "HTML5"
+		} else {
+			versionAttr := doc.Find("html").AttrOr("version", "")
+			if versionAttr != "" {
+				htmlVersion = versionAttr
+			}
+		}
 	}
-	analysis.HTMLVersion = docType
+	analysis.HTMLVersion = htmlVersion
 
 	// Get title
 	analysis.Title = doc.Find("title").Text()

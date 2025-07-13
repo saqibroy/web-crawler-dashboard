@@ -39,7 +39,7 @@ func StartWorker() {
 			}
 
 			// Update status to processing
-			db.DB.Model(&analysis).Update("status", models.Processing)
+			_ = analysis.MarkAsProcessing(db.DB)
 
 			ctx, cancel := context.WithCancel(context.Background())
 			cancelFuncs[analysis.ID] = cancel
@@ -49,39 +49,17 @@ func StartWorker() {
 
 			if err != nil {
 				if err == context.Canceled {
-					db.DB.Model(&analysis).Updates(map[string]interface{}{
-						"status":         models.Cancelled,
-						"title":          "",
-						"html_version":   "",
-						"headings":       "{}",
-						"internal_links": 0,
-						"external_links": 0,
-						"broken_links":   "{}",
-						"has_login_form": false,
-						"completed_at":   nil,
-					})
+					_ = analysis.MarkAsCancelled(db.DB)
 					log.Printf("Analysis %s cancelled", analysis.ID)
 					continue
 				}
 				log.Printf("Crawl failed for %s: %v", analysis.URL, err)
-				db.DB.Model(&analysis).Update("status", models.Failed)
+				_ = analysis.MarkAsFailed(db.DB)
 				continue
 			}
 
 			// Update analysis fields with results
-			analysis.HTMLVersion = analysisResult.HTMLVersion
-			analysis.Title = analysisResult.Title
-			analysis.Headings = analysisResult.Headings
-			analysis.InternalLinks = analysisResult.InternalLinks
-			analysis.ExternalLinks = analysisResult.ExternalLinks
-			analysis.BrokenLinks = analysisResult.BrokenLinks
-			analysis.HasLoginForm = analysisResult.HasLoginForm
-			analysis.Status = models.Completed
-			now := time.Now()
-			analysis.CompletedAt = &now
-			if err := db.DB.Save(&analysis).Error; err != nil {
-				log.Printf("Failed to save result for %s: %v", analysis.URL, err)
-			}
+			_ = analysis.MarkAsCompleted(db.DB, analysisResult)
 
 			time.Sleep(1 * time.Second)
 		}
