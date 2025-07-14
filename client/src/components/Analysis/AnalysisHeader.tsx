@@ -1,11 +1,11 @@
 // client/src/components/Analysis/AnalysisHeader.tsx
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import type { Analysis as AnalysisType } from '../../services/api'; // Renamed to avoid conflict
+import type { Analysis } from '../../types';
 import { getDetailStatusColor } from '../../utils/analysisUtils';
 
 interface AnalysisHeaderProps {
-  analysis: AnalysisType;
+  analysis: Analysis;
 }
 
 export default function AnalysisHeader({ analysis }: AnalysisHeaderProps) {

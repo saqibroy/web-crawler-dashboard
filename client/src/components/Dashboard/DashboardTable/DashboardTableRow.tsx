@@ -1,7 +1,7 @@
 // client/src/components/AnalysisTable/TableRow.tsx
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
-import type { Analysis } from '../../../services/api';
+import type { Analysis } from '../../../types';
 import StatusBadge from '../../common/StatusBadge';
 
 interface DashboardTableRowProps {

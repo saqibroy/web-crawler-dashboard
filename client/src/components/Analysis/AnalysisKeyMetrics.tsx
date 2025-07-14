@@ -1,9 +1,9 @@
 // client/src/components/Analysis/AnalysisKeyMetrics.tsx
 import { Link as LinkIcon, ExternalLink, AlertCircle, FileText } from 'lucide-react';
-import type { Analysis as AnalysisType } from '../../services/api'; // Renamed to avoid conflict
+import type { Analysis } from '../../types';
 
 interface AnalysisKeyMetricsProps {
-  analysis: AnalysisType;
+  analysis: Analysis;
 }
 
 interface MetricCardProps {

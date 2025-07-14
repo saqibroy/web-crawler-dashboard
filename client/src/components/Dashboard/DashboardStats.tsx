@@ -1,14 +1,6 @@
 // client/src/pages/Dashboard/StatsCards.tsx
 import { BarChart2, CheckCircle, Hourglass, XOctagon, XCircle } from 'lucide-react';
-
-interface Stats {
-  total: number;
-  completed: number;
-  processing: number;
-  queued: number;
-  failed: number;
-  cancelled: number;
-}
+import type { DashboardStatsData } from '../../types';
 
 interface StatCardProps {
   icon: React.ElementType;
@@ -37,7 +29,7 @@ const StatCard = ({ icon: Icon, bgColor, textColor, title, value }: StatCardProp
 );
 
 interface DashboardStatsProps {
-  stats: Stats;
+  stats: DashboardStatsData;
   activeStatus?: string;
   onStatusClick?: (status: string) => void;
   onTotalClick?: () => void;
@@ -80,7 +72,7 @@ export default function DashboardStats({ stats, activeStatus, onStatusClick, onT
               bgColor="bg-transparent"
               textColor={getTextColorForStatus(key)}
               title={title}
-              value={stats[key as keyof Stats]}
+              value={stats[key as keyof DashboardStatsData]}
             />
           </div>
         );

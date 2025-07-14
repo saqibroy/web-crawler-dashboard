@@ -9,7 +9,7 @@ import {
   useStopAnalysesMutation,
 } from '../hooks/useAnalysesData';
 import { useDebounce } from '../hooks/useDebounce'; // Use the shared hook
-import type { SortKey } from '../utils/analysisUtils';
+import type { SortKey, Analysis } from '../types';
 import DashboardForm from '../components/Dashboard/DashboardForm';
 import DashboardTable from '../components/Dashboard/DashboardTable';
 import ErrorAlert from '../components/common/ErrorAlert';
@@ -18,6 +18,7 @@ import ConfirmationModal from '../components/common/ConfirmationModal';
 import DashboardStats from '../components/Dashboard/DashboardStats';
 import DashboardControls from '../components/Dashboard/DashboardControls';
 import DashboardPagination from '../components/Dashboard/DashboardPagination';
+import SeoHelmet from '../components/common/SeoHelmet';
 
 
 export default function Dashboard() {
@@ -168,6 +169,11 @@ export default function Dashboard() {
 
   return (
     <>
+      <SeoHelmet
+        title="Web Analysis Dashboard"
+        description="Overview of all website analyses, including status, links, and HTML version."
+        canonicalUrl={window.location.origin}
+      />
       <ConfirmationModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}

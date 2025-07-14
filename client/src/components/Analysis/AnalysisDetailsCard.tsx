@@ -1,9 +1,9 @@
 // client/src/components/Analysis/AnalysisDetailsCard.tsx
-import type { Analysis as AnalysisType } from '../../services/api'; // Renamed to avoid conflict
+import type { Analysis } from '../../types';
 import { getDetailStatusColor } from '../../utils/analysisUtils';
 
 interface AnalysisDetailsCardProps {
-  analysis: AnalysisType;
+  analysis: Analysis;
 }
 
 export default function AnalysisDetailsCard({ analysis }: AnalysisDetailsCardProps) {

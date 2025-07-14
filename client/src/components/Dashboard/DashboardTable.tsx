@@ -1,7 +1,6 @@
 // client/src/components/AnalysisTable.tsx
-import type { Analysis } from '../../services/api';
+import type { Analysis, SortKey } from '../../types';
 import { sortAnalyses } from '../../utils/analysisUtils';
-import type { SortKey } from '../../utils/analysisUtils';
 import LoadingSpinner from '../common/LoadingSpinner';
 import EmptyState from '../common/EmptyState';
 import DashboardTableHeader from './DashboardTable/DashboardTableHeader';

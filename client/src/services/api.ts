@@ -1,6 +1,7 @@
 // src/services/api.ts
 import axios from 'axios';
 import type { AxiosResponse } from 'axios';
+import type { Analysis, GetAnalysesResponse } from '../types';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
@@ -32,32 +33,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-// Types
-export type AnalysisStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
-
-export type Analysis = {
-  id: string;
-  url: string;
-  status: AnalysisStatus;
-  html_version: string;
-  title: string;
-  headings: Record<string, number> | null; // Can be null if analysis is cancelled or no headings
-  internal_links: number;
-  external_links: number;
-  broken_links: Record<string, string> | null; // Can be null if analysis is cancelled or no broken links
-  has_login_form: boolean;
-  created_at: string;
-  updated_at: string;
-  completed_at: string | null;
-};
-
-// Assuming the API returns a structure like { data: Analysis[], total_count: number }
-export type GetAnalysesResponse = {
-  data: Analysis[];
-  total_count: number;
-  status_counts: Record<string, number>;
-};
 
 // Auth token function (not directly used with useQuery/useMutation but kept for login flow)
 export const getAuthToken = async (): Promise<{ access_token: string; token_type: string; expires_in: number }> => {

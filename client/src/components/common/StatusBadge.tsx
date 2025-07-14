@@ -1,12 +1,5 @@
-import type { AnalysisStatus } from '../../services/api';
 import { CheckCircle, XCircle, Hourglass, Info } from 'lucide-react';
-import type { ReactNode } from 'react';
-
-interface StatusDisplay {
-  icon: ReactNode;
-  className: string;
-  text: string;
-}
+import type { StatusDisplay, AnalysisStatus } from '../../types';
 
 const getStatusDisplay = (status: AnalysisStatus): StatusDisplay => {
   const baseClasses = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";

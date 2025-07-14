@@ -4,14 +4,7 @@ import {
   Hourglass,
   Info,
 } from 'lucide-react';
-import type { Analysis, AnalysisStatus } from '../services/api';
-import type { ReactNode } from 'react';
-
-interface StatusDisplay {
-  icon: ReactNode;
-  className: string;
-  text: string;
-}
+import type { SortKey, StatusDisplay, Analysis, AnalysisStatus } from '../types';
 
 /**
  * Returns the appropriate React icon and Tailwind CSS classes for a given analysis status.
@@ -65,11 +58,6 @@ export const getStatusDisplay = (status: AnalysisStatus): StatusDisplay => {
       };
   }
 };
-
-/**
- * Type definition for analysis table sort keys.
- */
-export type SortKey = 'url' | 'status' | 'title' | 'html_version' | 'internal_links' | 'external_links' | 'created_at' | 'updated_at';
 
 /**
  * Compares two analysis objects based on a given sort key and direction.

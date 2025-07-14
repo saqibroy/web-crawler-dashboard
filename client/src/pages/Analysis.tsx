@@ -2,10 +2,10 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSingleAnalysisQuery } from '../hooks/useAnalysesData';
-import type { AnalysisStatus } from '../services/api';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorAlert from '../components/common/ErrorAlert';
 import EmptyState from '../components/common/EmptyState';
+import SeoHelmet from '../components/common/SeoHelmet';
 
 // New components for Analysis page
 import AnalysisHeader from '../components/Analysis/AnalysisHeader';
@@ -14,6 +14,23 @@ import AnalysisLinksChart from '../components/Analysis/AnalysisLinksChart';
 import AnalysisHeadingsChart from '../components/Analysis/AnalysisHeadingsChart';
 import AnalysisDetailsCard from '../components/Analysis/AnalysisDetailsCard';
 import AnalysisBrokenLinks from '../components/Analysis/AnalysisBrokenLinks';
+import type { Analysis } from '../types';
+
+const DEFAULT_MINIMAL_ANALYSIS: Analysis = {
+  status: 'failed',
+  url: '',
+  id: '',
+  created_at: new Date().toISOString(),
+  broken_links: null,
+  external_links: 0,
+  has_login_form: false,
+  headings: null,
+  html_version: '',
+  internal_links: 0,
+  title: '',
+  updated_at: new Date().toISOString(),
+  completed_at: null
+};
 
 export default function Analysis() {
   const { id } = useParams();
@@ -29,50 +46,18 @@ export default function Analysis() {
   }
 
   if (error || localError) {
-    // Provide a minimal analysis object for the header to render gracefully
-    const minimalAnalysis = {
-      status: 'failed' as AnalysisStatus,
-      url: '',
-      id: '',
-      created_at: new Date().toISOString(),
-      broken_links: null,
-      external_links: 0,
-      has_login_form: false,
-      headings: null,
-      html_version: '',
-      internal_links: 0,
-      title: '',
-      updated_at: new Date().toISOString(),
-      completed_at: null
-    };
     return (
       <div>
-        <AnalysisHeader analysis={minimalAnalysis} />
+        <AnalysisHeader analysis={DEFAULT_MINIMAL_ANALYSIS} />
         <ErrorAlert message={error?.message || localError || ''} onDismiss={() => setLocalError(null)} />
       </div>
     );
   }
 
   if (!analysis) {
-    // Provide a minimal analysis object for the header to render gracefully
-    const minimalAnalysis = {
-      status: 'failed' as AnalysisStatus,
-      url: '',
-      id: '',
-      created_at: new Date().toISOString(),
-      broken_links: null,
-      external_links: 0,
-      has_login_form: false,
-      headings: null,
-      html_version: '',
-      internal_links: 0,
-      title: '',
-      updated_at: new Date().toISOString(),
-      completed_at: null
-    };
     return (
       <div>
-        <AnalysisHeader analysis={minimalAnalysis} />
+        <AnalysisHeader analysis={DEFAULT_MINIMAL_ANALYSIS} />
         <EmptyState title="No analysis data available." message="The requested analysis could not be loaded or does not exist." />
       </div>
     );
@@ -93,26 +78,33 @@ export default function Analysis() {
   } : analysis;
 
   return (
-    <div>
-      <AnalysisHeader analysis={displayAnalysis} />
+    <>
+      <SeoHelmet
+        title={analysis?.title || analysis?.url || 'Analysis Details'}
+        description={`Detailed web analysis for ${analysis?.url || 'a website'}. HTML version, links, headings, and more.`}
+        canonicalUrl={`${window.location.origin}/analysis/${id}`}
+      />
+      <div>
+        <AnalysisHeader analysis={displayAnalysis} />
 
-      {/* Key Metrics */}
-      <AnalysisKeyMetrics analysis={displayAnalysis} />
+        {/* Key Metrics */}
+        <AnalysisKeyMetrics analysis={displayAnalysis} />
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <AnalysisLinksChart
-          internalLinks={displayAnalysis.internal_links || 0}
-          externalLinks={displayAnalysis.external_links || 0}
-        />
-        <AnalysisHeadingsChart headings={displayAnalysis.headings} />
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <AnalysisLinksChart
+            internalLinks={displayAnalysis.internal_links || 0}
+            externalLinks={displayAnalysis.external_links || 0}
+          />
+          <AnalysisHeadingsChart headings={displayAnalysis.headings} />
+        </div>
+
+        {/* Details Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <AnalysisDetailsCard analysis={displayAnalysis} />
+          <AnalysisBrokenLinks brokenLinks={displayAnalysis.broken_links} />
+        </div>
       </div>
-
-      {/* Details Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <AnalysisDetailsCard analysis={displayAnalysis} />
-        <AnalysisBrokenLinks brokenLinks={displayAnalysis.broken_links} />
-      </div>
-    </div>
+    </>
   );
 }

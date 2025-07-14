@@ -1,10 +1,10 @@
-import { render, screen } from '@testing-library/react';
-import { expect, describe, test } from 'vitest';
-import matchers from '@testing-library/jest-dom/matchers';
 import '@testing-library/jest-dom';
-expect.extend(matchers);
+import { render, screen } from '@testing-library/react';
+import { describe, test, expect } from 'vitest';
 import StatusBadge from '../components/common/StatusBadge';
-import type { AnalysisStatus } from '../services/api';
+import type { AnalysisStatus } from '../types';
+
+// No need to import or extend jest-dom matchers; handled by vitest.setup.ts
 
 describe('StatusBadge', () => {
   const statuses: { status: AnalysisStatus; text: RegExp }[] = [

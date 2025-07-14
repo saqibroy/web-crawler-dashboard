@@ -8,7 +8,7 @@ import {
   deleteAnalyses,
   fetchSingleAnalysis,
 } from '../services/api';
-import type { Analysis } from '../services/api';
+import type { Analysis, GetAnalysesResponse } from '../types';
 
 // Define types for query parameters
 type GetAnalysesParams = {
@@ -18,12 +18,6 @@ type GetAnalysesParams = {
   sortBy?: keyof Analysis;
   sortOrder?: 'asc' | 'desc';
   status?: string;
-};
-
-export type GetAnalysesResponse = {
-  data: Analysis[];
-  total_count: number;
-  status_counts: Record<string, number>;
 };
 
 /**

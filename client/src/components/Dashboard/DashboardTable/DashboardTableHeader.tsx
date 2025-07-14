@@ -1,7 +1,5 @@
-// client/src/components/AnalysisTable/TableHeader.tsx
 import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
-import type { Analysis } from '../../../services/api';
-import type { SortKey } from '../../../utils/analysisUtils';
+import type { Analysis, SortKey } from '../../../types';
 
 interface DashboardTableHeaderProps {
   analyses: Analysis[];

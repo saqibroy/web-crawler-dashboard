@@ -1,5 +1,15 @@
 # React + TypeScript + Vite
 
+## SEO & Metadata
+
+This project includes basic SEO and metadata best practices, even though it is a dashboard-style application not intended for public indexing. Each page sets a dynamic `<title>` and `<meta name="description">` using a reusable `SeoHelmet` component. Additionally, a `<meta name="robots" content="noindex">` tag is included to prevent search engines from indexing the dashboard, as is standard for internal tools.
+
+- Dynamic page titles and descriptions for improved browser usability and social sharing.
+- `noindex` meta tag to prevent search engine indexing of private/internal pages.
+- See `src/components/common/SeoHelmet.tsx` for implementation details.
+
+---
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
