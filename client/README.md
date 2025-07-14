@@ -1,5 +1,9 @@
 # React + TypeScript + Vite
 
+## Status Filtering Design Decision
+
+Status filtering is implemented via the DashboardStats cards at the top of the dashboard for a more discoverable and user-friendly experience. This avoids redundant filters in the table header and keeps the UI clean and intuitive. The table header does not include a status filter dropdown to prevent confusion and maintain a single, clear filtering mechanism.
+
 ## SEO & Metadata
 
 This project includes basic SEO and metadata best practices, even though it is a dashboard-style application not intended for public indexing. Each page sets a dynamic `<title>` and `<meta name="description">` using a reusable `SeoHelmet` component. Additionally, a `<meta name="robots" content="noindex">` tag is included to prevent search engines from indexing the dashboard, as is standard for internal tools.

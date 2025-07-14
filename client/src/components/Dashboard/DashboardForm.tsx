@@ -7,19 +7,35 @@ interface DashboardFormProps {
   onSubmit: (url: string) => void;
   // `isLoading` will be `isPending` from useMutation
   isLoading: boolean;
+  error?: string | null;
   // Remove error and onError props, only local validation error is handled here
 }
 
 export default function DashboardForm({
   onSubmit,
   isLoading,
-  // Only use onSubmit and isLoading
+  error,
 }: DashboardFormProps) {
   const [url, setUrl] = useState('');
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  function isValidUrl(str: string) {
+    try {
+      const urlObj = new URL(str);
+      return (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') && !urlObj.hostname.includes(' ');
+    } catch {
+      return false;
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(url);
+    if (!isValidUrl(url.trim())) {
+      setLocalError('Please enter a valid URL (must start with http(s):// and contain no spaces).');
+      return;
+    }
+    setLocalError(null);
+    onSubmit(url.trim());
     setUrl('');
   };
 
@@ -34,13 +50,19 @@ export default function DashboardForm({
           <input
             type="url"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e) => {
+              setUrl(e.target.value);
+              setLocalError(null);
+            }}
             placeholder="Enter website URL (e.g., https://example.com)"
             className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             required
             disabled={isLoading}
             aria-label="Website URL input"
           />
+          {(localError || error) && (
+            <div className="mt-1 text-xs text-red-600" role="alert">{localError || error}</div>
+          )}
         </div>
         <button
           type="submit"

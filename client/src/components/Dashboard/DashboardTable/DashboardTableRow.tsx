@@ -39,7 +39,14 @@ export default function DashboardTableRow({ analysis, isSelected, onToggleSelect
         </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 w-20">
-        {analysis.html_version || '-'}
+        <div className="flex items-center gap-2">
+          {analysis.html_version || '-'}
+          {analysis.has_login_form && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800" title="Login form detected">
+              Login
+            </span>
+          )}
+        </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 w-20">
         {analysis.internal_links ?? '-'}

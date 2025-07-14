@@ -32,9 +32,8 @@ export default function DashboardTable({
 
   const sortedAnalyses = sortConfig
     ? [...analyses].sort((a, b) => sortAnalyses(a, b, sortConfig.key, sortConfig.direction))
-    : analyses; // Use the original order if no sort config
+    : analyses;
 
-  // Subtle overlay spinner for background refetches
   const showOverlaySpinner = isLoading && analyses.length > 0;
 
   if (isLoading) {
@@ -44,8 +43,8 @@ export default function DashboardTable({
   if (analyses.length === 0) {
     return (
       <EmptyState
-        title="No analyses found"
-        message="Submit a URL above to get started with your first analysis!"
+        title={"No analyses found"}
+        message={"Submit a URL above to get started with your first analysis!"}
       />
     );
   }

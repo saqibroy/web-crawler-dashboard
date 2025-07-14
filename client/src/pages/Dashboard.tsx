@@ -9,29 +9,29 @@ import {
   useStopAnalysesMutation,
 } from '../hooks/useAnalysesData';
 import { useDebounce } from '../hooks/useDebounce'; // Use the shared hook
-import type { SortKey, Analysis } from '../types';
+import type { SortKey, Analysis, AnalysisStatus } from '../types';
 import DashboardForm from '../components/Dashboard/DashboardForm';
 import DashboardTable from '../components/Dashboard/DashboardTable';
-import ErrorAlert from '../components/common/ErrorAlert';
-import SuccessAlert from '../components/common/SuccessAlert';
 import ConfirmationModal from '../components/common/ConfirmationModal';
 import DashboardStats from '../components/Dashboard/DashboardStats';
 import DashboardControls from '../components/Dashboard/DashboardControls';
 import DashboardPagination from '../components/Dashboard/DashboardPagination';
 import SeoHelmet from '../components/common/SeoHelmet';
+import toast from 'react-hot-toast';
+import ErrorAlert from '../components/common/ErrorAlert';
+import { getErrorMessage } from '../utils/errorUtils';
 
 
 export default function Dashboard() {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [globalError, setGlobalError] = useState<string | null>(null);
-  const [globalSuccess, setGlobalSuccess] = useState<string | null>(null);
+  const [blockingError, setBlockingError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' } | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<AnalysisStatus | undefined>(undefined);
   const [unfilteredTotal, setUnfilteredTotal] = useState<number | null>(null);
 
   // Use the custom query hook
@@ -57,22 +57,38 @@ export default function Dashboard() {
     visibleSelectedAnalyses.length === selectedIds.length &&
     visibleSelectedAnalyses.every(a => a.status === 'queued' || a.status === 'processing');
 
+  // For interview: We display the backend's user-friendly error message directly. If localization or advanced error handling is needed, the error code can be mapped to custom messages in the frontend.
+  function getFriendlyErrorMessage(error: any): string {
+    if (error?.response?.data?.message) {
+      return error.response.data.message;
+    }
+    return 'An unexpected error occurred. Please try again.';
+  }
+
   // Handle errors from query and mutations
   useEffect(() => {
     if (analysesError) {
-      setGlobalError(analysesError.message || 'Failed to fetch analyses.');
+      setBlockingError(getErrorMessage(analysesError));
     } else if (addUrlMutation.error) {
-      setGlobalError(addUrlMutation.error.message || 'Failed to add URL.');
+      toast.error(getErrorMessage(addUrlMutation.error));
     } else if (deleteAnalysesMutation.error) {
-      setGlobalError(deleteAnalysesMutation.error.message || 'Failed to delete analyses.');
+      toast.error(getErrorMessage(deleteAnalysesMutation.error));
     } else if (stopAnalysesMutation.error) {
-      setGlobalError(stopAnalysesMutation.error.message || 'Failed to stop analyses.');
+      toast.error(getErrorMessage(stopAnalysesMutation.error));
     } else if (rerunAnalysesMutation.error) {
-      setGlobalError(rerunAnalysesMutation.error.message || 'Failed to re-run analyses.');
+      toast.error(getErrorMessage(rerunAnalysesMutation.error));
     } else {
-      setGlobalError(null);
+      setBlockingError(null);
     }
   }, [analysesError, addUrlMutation.error, deleteAnalysesMutation.error, stopAnalysesMutation.error, rerunAnalysesMutation.error]);
+
+  // Auto-dismiss alerts after 4 seconds
+  useEffect(() => {
+    if (blockingError) {
+      toast.error(blockingError);
+      setBlockingError(null);
+    }
+  }, [blockingError]);
 
   // Dashboard stats derived from the fetched data
   const statusCounts = data?.status_counts || {};
@@ -100,9 +116,12 @@ export default function Dashboard() {
     if (selectedIds.length > 0) {
       deleteAnalysesMutation.mutate(selectedIds, {
         onSuccess: () => {
-          setGlobalSuccess(`Successfully deleted ${selectedIds.length} analysis(es)`);
+          toast.success(`Successfully deleted ${selectedIds.length} analysis(es)`);
           setSelectedIds([]);
           setShowDeleteModal(false);
+        },
+        onError: (error) => {
+          toast.error(getErrorMessage(error));
         }
       });
     }
@@ -110,17 +129,31 @@ export default function Dashboard() {
 
   const handleStopSelected = () => {
     if (selectedIds.length > 0) {
-      stopAnalysesMutation.mutate(selectedIds);
-      setSelectedIds([]);
+      stopAnalysesMutation.mutate(selectedIds, {
+        onSuccess: () => {
+          toast.success('Selected analyses stopped.');
+          setSelectedIds([]);
+        },
+        onError: (error) => {
+          toast.error(getErrorMessage(error));
+        }
+      });
     }
   };
 
   const handleRerunSelected = () => {
     if (selectedIds.length > 0) {
-      rerunAnalysesMutation.mutate(selectedIds);
-      setSelectedIds([]);
-      setPage(1); // Reset to page 1 when rerunning
-      setStatusFilter(undefined); // Reset filter
+      rerunAnalysesMutation.mutate(selectedIds, {
+        onSuccess: () => {
+          toast.success('Selected analyses re-queued for processing.');
+          setSelectedIds([]);
+          setPage(1); // Reset to page 1 when rerunning
+          setStatusFilter(undefined); // Reset filter
+        },
+        onError: (error) => {
+          toast.error(getErrorMessage(error));
+        }
+      });
     }
   };
 
@@ -144,11 +177,18 @@ export default function Dashboard() {
     setPage(1); // Reset to first page on sort
   };
 
-  // Handle add URL with page reset
+  // Handle add URL with page reset and success message
   const handleAddUrl = (url: string) => {
-    addUrlMutation.mutate(url.trim());
-    setPage(1); // Reset to page 1 when adding new URL
-    setStatusFilter(undefined); // Reset filter
+    addUrlMutation.mutate(url.trim(), {
+      onSuccess: () => {
+        toast.success('URL added successfully!');
+        setPage(1); // Reset to page 1 when adding new URL
+        setStatusFilter(undefined); // Reset filter
+      },
+      onError: (error) => {
+        toast.error(getErrorMessage(error));
+      }
+    });
   };
 
   const totalPages = Math.ceil(totalAnalyses / limit);
@@ -185,11 +225,15 @@ export default function Dashboard() {
         type="danger"
       />
 
+      {blockingError && (
+        <ErrorAlert message={blockingError} onDismiss={() => setBlockingError(null)} />
+      )}
+
       {/* Stats Cards */}
       <DashboardStats
         stats={stats}
         activeStatus={statusFilter}
-        onStatusClick={status => setStatusFilter(statusFilter === status ? undefined : status)}
+        onStatusClick={status => setStatusFilter(statusFilter === status ? undefined : status as AnalysisStatus)}
         onTotalClick={() => setStatusFilter(undefined)}
       />
       {statusFilter && (
@@ -207,10 +251,6 @@ export default function Dashboard() {
           isLoading={addUrlMutation.isPending}
         />
       </div>
-
-      {/* Error Alert (moved here) */}
-      <ErrorAlert message={globalError} onDismiss={() => setGlobalError(null)} />
-      {globalSuccess && <SuccessAlert message={globalSuccess} onDismiss={() => setGlobalSuccess(null)} />}
 
       {/* Controls and Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">

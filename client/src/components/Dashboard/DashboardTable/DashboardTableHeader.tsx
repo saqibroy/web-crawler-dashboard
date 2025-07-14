@@ -1,4 +1,5 @@
 import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { Fragment } from 'react';
 import type { Analysis, SortKey } from '../../../types';
 
 interface DashboardTableHeaderProps {
@@ -29,7 +30,7 @@ export default function DashboardTableHeader({
     );
   };
 
-  const headers: { key: SortKey; label: string; className?: string }[] = [
+  const headers: Array<{ key: SortKey; label: string; className?: string }> = [
     { key: 'url', label: 'URL' },
     { key: 'status', label: 'Status' },
     { key: 'title', label: 'Title' },
@@ -56,7 +57,7 @@ export default function DashboardTableHeader({
         </th>
         {headers.map(header => (
           <th
-            key={header.key}
+            key={header.key as string}
             scope="col"
             className={`group px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors ${header.className || ''}`}
             onClick={() => onSort(header.key)}

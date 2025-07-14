@@ -39,7 +39,14 @@ export default function DashboardTableMobile({ analysis, isSelected, onToggleSel
         <div className="grid grid-cols-2 gap-4 text-sm mb-4">
           <div>
             <span className="text-gray-500">HTML Version:</span>
-            <span className="ml-2 text-gray-900">{analysis.html_version || '-'}</span>
+            <span className="ml-2 text-gray-900 flex items-center gap-2">
+              {analysis.html_version || '-'}
+              {analysis.has_login_form && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800" title="Login form detected">
+                  Login
+                </span>
+              )}
+            </span>
           </div>
           <div>
             <span className="text-gray-500">Internal Links:</span>
