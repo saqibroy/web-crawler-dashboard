@@ -2,7 +2,9 @@ package api
 
 import (
 	"fmt"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/saqibroy/web-crawler-dashboard/server/db"
@@ -10,13 +12,32 @@ import (
 	"github.com/saqibroy/web-crawler-dashboard/server/worker"
 )
 
+func isValidURL(u string) bool {
+	parsed, err := url.ParseRequestURI(u)
+	if err != nil {
+		return false
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return false
+	}
+	if parsed.Host == "" || strings.Contains(parsed.Host, " ") {
+		return false
+	}
+	return true
+}
+
 func SubmitURL(c *gin.Context) {
 	var req struct {
-		URL string `json:"url" binding:"required,url"`
+		URL string `json:"url" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": "Invalid URL", "details": err.Error()})
+		c.JSON(400, gin.H{"error": "invalid_request", "message": "We couldn't process your request. Please check your input and try again.", "details": err.Error()})
+		return
+	}
+
+	if !isValidURL(req.URL) {
+		c.JSON(400, gin.H{"error": "invalid_url", "message": "The website address you entered is not valid. Please check and try again."})
 		return
 	}
 
@@ -27,7 +48,7 @@ func SubmitURL(c *gin.Context) {
 
 	result := db.DB.Create(&analysis)
 	if result.Error != nil {
-		c.JSON(500, gin.H{"error": "Failed to create analysis", "details": result.Error.Error()})
+		c.JSON(500, gin.H{"error": "db_create_failed", "message": "Sorry, we couldn't save your analysis. Please try again later.", "details": result.Error.Error()})
 		return
 	}
 
@@ -38,17 +59,19 @@ func SubmitURL(c *gin.Context) {
 }
 
 func GetAnalyses(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	page, errPage := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, errLimit := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	search := c.DefaultQuery("search", "")        // New: search parameter
 	sortBy := c.DefaultQuery("sort_by", "")       // New: sort_by parameter
 	sortOrder := c.DefaultQuery("sort_order", "") // New: sort_order parameter
 
-	if page < 1 {
-		page = 1
+	if errPage != nil || page < 1 {
+		c.JSON(400, gin.H{"error": "invalid_page", "message": "The page number is not valid. Please try again."})
+		return
 	}
-	if limit < 1 {
-		limit = 20
+	if errLimit != nil || limit < 1 {
+		c.JSON(400, gin.H{"error": "invalid_limit", "message": "The number of results per page is not valid. Please try again."})
+		return
 	}
 
 	var analyses []models.Analysis
@@ -75,6 +98,11 @@ func GetAnalyses(c *gin.Context) {
 
 	statusFilter := c.DefaultQuery("status", "")
 	if statusFilter != "" {
+		validStatuses := map[string]bool{"queued": true, "processing": true, "completed": true, "failed": true, "cancelled": true}
+		if !validStatuses[statusFilter] {
+			c.JSON(400, gin.H{"error": "invalid_status_filter", "message": "The status filter you selected is not valid."})
+			return
+		}
 		query = query.Where("status = ?", statusFilter)
 	}
 
@@ -104,16 +132,22 @@ func DeleteAnalyses(c *gin.Context) {
 		IDs []string `json:"ids" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": "Invalid request", "details": err.Error()})
+		c.JSON(400, gin.H{"error": "invalid_request", "message": "We couldn't process your request. Please check your input and try again.", "details": err.Error()})
 		return
 	}
 	if len(req.IDs) == 0 {
-		c.JSON(400, gin.H{"error": "No IDs provided"})
+		c.JSON(400, gin.H{"error": "no_ids_provided", "message": "No analyses were selected. Please select at least one and try again."})
 		return
+	}
+	for _, id := range req.IDs {
+		if len(id) != 36 { // UUID length
+			c.JSON(400, gin.H{"error": "invalid_id_format", "message": "We couldn't find one of the selected analyses. Please refresh and try again.", "id": id})
+			return
+		}
 	}
 	result := db.DB.Delete(&models.Analysis{}, req.IDs)
 	if result.Error != nil {
-		c.JSON(500, gin.H{"error": "Failed to delete analyses", "details": result.Error.Error()})
+		c.JSON(500, gin.H{"error": "db_delete_failed", "message": "Sorry, we couldn't delete the selected analyses. Please try again later.", "details": result.Error.Error()})
 		return
 	}
 	c.JSON(200, gin.H{"deleted": result.RowsAffected})
@@ -125,12 +159,18 @@ func StopAnalyses(c *gin.Context) {
 		IDs []string `json:"ids" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": "Invalid request", "details": err.Error()})
+		c.JSON(400, gin.H{"error": "invalid_request", "message": "We couldn't process your request. Please check your input and try again.", "details": err.Error()})
 		return
 	}
 	if len(req.IDs) == 0 {
-		c.JSON(400, gin.H{"error": "No IDs provided"})
+		c.JSON(400, gin.H{"error": "no_ids_provided", "message": "No analyses were selected. Please select at least one and try again."})
 		return
+	}
+	for _, id := range req.IDs {
+		if len(id) != 36 {
+			c.JSON(400, gin.H{"error": "invalid_id_format", "message": "We couldn't find one of the selected analyses. Please refresh and try again.", "id": id})
+			return
+		}
 	}
 
 	// Update status to cancelled and clear all analysis data for queued and processing analyses
@@ -155,18 +195,24 @@ func RerunAnalyses(c *gin.Context) {
 		IDs []string `json:"ids" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": "Invalid request", "details": err.Error()})
+		c.JSON(400, gin.H{"error": "invalid_request", "message": "We couldn't process your request. Please check your input and try again.", "details": err.Error()})
 		return
 	}
 	if len(req.IDs) == 0 {
-		c.JSON(400, gin.H{"error": "No IDs provided"})
+		c.JSON(400, gin.H{"error": "no_ids_provided", "message": "No analyses were selected. Please select at least one and try again."})
 		return
+	}
+	for _, id := range req.IDs {
+		if len(id) != 36 {
+			c.JSON(400, gin.H{"error": "invalid_id_format", "message": "We couldn't find one of the selected analyses. Please refresh and try again.", "id": id})
+			return
+		}
 	}
 	result := db.DB.Model(&models.Analysis{}).
 		Where("id IN ? AND status NOT IN (?, ?)", req.IDs, models.Processing, models.Queued).
 		Updates(map[string]interface{}{"status": models.Queued})
 	if result.Error != nil {
-		c.JSON(500, gin.H{"error": "Failed to rerun analyses", "details": result.Error.Error()})
+		c.JSON(500, gin.H{"error": "db_rerun_failed", "message": "Sorry, we couldn't re-queue the selected analyses. Please try again later.", "details": result.Error.Error()})
 		return
 	}
 	c.JSON(200, gin.H{"rerun": result.RowsAffected})
@@ -175,10 +221,14 @@ func RerunAnalyses(c *gin.Context) {
 // Get a single analysis by ID
 func GetSingleAnalysis(c *gin.Context) {
 	id := c.Param("id")
+	if len(id) != 36 {
+		c.JSON(400, gin.H{"error": "invalid_id_format", "message": "We couldn't find the analysis you requested. Please refresh and try again."})
+		return
+	}
 	var analysis models.Analysis
 	result := db.DB.First(&analysis, "id = ?", id)
 	if result.Error != nil {
-		c.JSON(404, gin.H{"error": "Analysis not found"})
+		c.JSON(404, gin.H{"error": "not_found", "message": "We couldn't find the analysis you requested."})
 		return
 	}
 	c.JSON(200, analysis)

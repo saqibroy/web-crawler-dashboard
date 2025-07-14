@@ -84,6 +84,12 @@ curl -H "Authorization: Bearer <token>" \
 - The server uses GORM's `AutoMigrate` for easy local setup.
 - For production, consider using manual migrations and more secure secret management.
 
+## Error Handling Design
+
+- All backend error responses include a user-friendly `message` field and a machine-readable `error` code.
+- The frontend displays the backend's `message` field directly to users for clarity and simplicity.
+- This approach is chosen for speed and clarity in a job interview context. For production, you can extend this by mapping error codes to localized or more advanced messages in the frontend.
+
 ## Production Considerations
 
 - **JWT Secret:** Always use a strong, randomly generated value for `JWT_SECRET` in production. Never use the default or a weak secret. Consider using a secrets manager or environment variable management tool.
