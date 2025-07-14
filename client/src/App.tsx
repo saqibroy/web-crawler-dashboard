@@ -13,7 +13,7 @@ function App() {
 
   return (
     <>
-      <Toaster position="top-right" />
+      <Toaster position="bottom-right" />
       <BrowserRouter>
         {/* Application-wide Header - Clean white background with subtle shadow */}
         <header className="bg-white shadow-sm border-b border-gray-200">
