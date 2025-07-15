@@ -1,37 +1,26 @@
 import { Link as LinkIcon, ExternalLink, AlertCircle, FileText } from 'lucide-react'
 import type { Analysis } from '../../types'
+import BaseCard from '../common/BaseCard';
 
 interface AnalysisKeyMetricsProps {
   analysis: Analysis
 }
 
-const MetricCard = ({
-  icon: Icon,
-  bgColor,
-  textColor,
-  title,
-  value,
-}: {
+const MetricCard = ({ icon, bgColor, textColor, title, value }: {
   icon: React.ElementType
   bgColor: string
   textColor: string
   title: string
   value: string | number
 }) => (
-  <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-    <div className="flex items-center">
-      <div
-        className={`w-8 h-8 ${bgColor} rounded-full flex items-center justify-center flex-shrink-0`}
-      >
-        <Icon className={`w-5 h-5 ${textColor}`} />
-      </div>
-      <div className="ml-5 flex-1">
-        <dt className="text-sm font-medium text-gray-500 truncate">{title}</dt>
-        <dd className="text-lg font-semibold text-gray-900">{value}</dd>
-      </div>
-    </div>
-  </div>
-)
+  <BaseCard
+    icon={icon}
+    title={title}
+    value={value}
+    iconBgColor={bgColor}
+    iconTextColor={textColor}
+  />
+);
 
 export default function AnalysisKeyMetrics({ analysis }: AnalysisKeyMetricsProps) {
   const brokenLinksCount = Object.keys(analysis.broken_links || {}).length

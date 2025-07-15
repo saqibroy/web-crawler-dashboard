@@ -1,6 +1,9 @@
 // client/src/components/Dashboard/DashboardStats.tsx
 import { BarChart2, CheckCircle, Hourglass, XOctagon, XCircle } from 'lucide-react'
 import type { DashboardStatsData } from '../../types'
+import { getStatusColorClasses } from '../../utils/analysisUtils';
+import type { AnalysisStatus } from '../../types';
+import BaseCard from '../common/BaseCard';
 
 interface StatCardProps {
   icon: React.ElementType
@@ -11,31 +14,35 @@ interface StatCardProps {
   onClick?: () => void
 }
 
-const StatCard = ({ icon: Icon, title, value, status, isActive, onClick }: StatCardProps) => {
-  const bgColor = isActive && status ? getBgColorForStatus(status) : 'bg-white'
-  const textColor = status ? getTextColorForStatus(status) : 'text-blue-600'
-
+const StatCard = ({ icon, title, value, status, isActive, onClick }: StatCardProps) => {
+  let bgColor = 'bg-white';
+  let textColor = 'text-blue-600';
+  let iconBgColor = 'bg-gray-100';
+  let iconTextColor = 'text-blue-600';
+  if (status) {
+    const { bgColor: statusBgColor, textColor: statusTextColor } = getStatusColorClasses(status as AnalysisStatus);
+    bgColor = isActive ? statusBgColor : 'bg-white';
+    textColor = statusTextColor;
+    iconBgColor = statusBgColor;
+    iconTextColor = statusTextColor;
+  } else if (isActive) {
+    bgColor = 'bg-blue-100';
+    textColor = 'text-blue-800';
+    iconBgColor = 'bg-blue-100';
+    iconTextColor = 'text-blue-800';
+  }
   return (
-    <div
-      className={`${bgColor} ${onClick ? 'cursor-pointer' : ''} rounded-lg shadow-sm p-6 border border-gray-200 transition-colors`}
+    <BaseCard
+      icon={icon}
+      title={title}
+      value={value}
+      bgColor={bgColor}
+      iconBgColor={iconBgColor}
+      iconTextColor={iconTextColor}
       onClick={onClick}
-    >
-      <div className="flex items-center">
-        <div className="flex-shrink-0">
-          <div className="w-8 h-8 bg-transparent rounded-full flex items-center justify-center">
-            <Icon className={`w-5 h-5 ${textColor}`} />
-          </div>
-        </div>
-        <div className="ml-5 w-0 flex-1">
-          <dl>
-            <dt className="text-sm font-medium text-gray-500 truncate">{title}</dt>
-            <dd className="text-lg font-semibold text-gray-900">{value}</dd>
-          </dl>
-        </div>
-      </div>
-    </div>
-  )
-}
+    />
+  );
+};
 
 interface DashboardStatsProps {
   stats: DashboardStatsData
@@ -83,26 +90,4 @@ export default function DashboardStats({
       ))}
     </div>
   )
-}
-
-function getTextColorForStatus(status: string) {
-  const colors = {
-    completed: 'text-green-600',
-    processing: 'text-yellow-600',
-    queued: 'text-gray-600',
-    failed: 'text-red-600',
-    cancelled: 'text-orange-600',
-  }
-  return colors[status as keyof typeof colors] || 'text-gray-600'
-}
-
-function getBgColorForStatus(status: string) {
-  const colors = {
-    completed: 'bg-green-50',
-    processing: 'bg-yellow-50',
-    queued: 'bg-gray-50',
-    failed: 'bg-red-50',
-    cancelled: 'bg-orange-50',
-  }
-  return colors[status as keyof typeof colors] || 'bg-white'
 }

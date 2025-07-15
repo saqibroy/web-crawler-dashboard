@@ -1,6 +1,6 @@
 // client/src/components/Analysis/AnalysisDetailsCard.tsx
 import type { Analysis } from '../../types'
-import { getDetailStatusColor } from '../../utils/analysisUtils'
+import { getStatusColorClasses } from '../../utils/analysisUtils';
 
 interface AnalysisDetailsCardProps {
   analysis: Analysis
@@ -18,7 +18,7 @@ export default function AnalysisDetailsCard({ analysis }: AnalysisDetailsCardPro
             <dt className="text-sm font-medium text-gray-500">Status</dt>
             <dd>
               <span
-                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getDetailStatusColor(analysis.status)}`}
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColorClasses(analysis.status).detailBgColor} ${getStatusColorClasses(analysis.status).detailTextColor}`}
               >
                 {analysis.status}
               </span>

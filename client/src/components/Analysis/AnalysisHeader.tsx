@@ -2,7 +2,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import type { Analysis } from '../../types'
-import { getDetailStatusColor } from '../../utils/analysisUtils'
+import { getStatusColorClasses } from '../../utils/analysisUtils';
 
 interface AnalysisHeaderProps {
   analysis: Analysis
@@ -31,7 +31,7 @@ export default function AnalysisHeader({ analysis }: AnalysisHeaderProps) {
         </div>
         <div className="ml-4 flex-shrink-0">
           <span
-            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getDetailStatusColor(analysis.status)}`}
+            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColorClasses(analysis.status).detailBgColor} ${getStatusColorClasses(analysis.status).detailTextColor}`}
           >
             {analysis.status}
           </span>
