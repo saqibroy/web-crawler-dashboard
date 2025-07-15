@@ -1,25 +1,32 @@
-import { Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
-import type { Analysis } from '../../../types';
-import StatusBadge from '../../common/StatusBadge';
+import { Link } from 'react-router-dom'
+import { ChevronRight } from 'lucide-react'
+import type { Analysis } from '../../../types'
+import StatusBadge from '../../common/StatusBadge'
 
 interface DashboardTableMobileProps {
-  analysis: Analysis;
-  isSelected: boolean;
-  onToggleSelection: (id: string) => void;
+  analysis: Analysis
+  isSelected: boolean
+  onToggleSelection: (id: string) => void
 }
 
-const DISABLED_STATUSES = ['cancelled', 'queued', 'processing', 'failed'];
+const DISABLED_STATUSES = ['cancelled', 'queued', 'processing', 'failed']
 
-export default function DashboardTableMobile({ analysis, isSelected, onToggleSelection }: DashboardTableMobileProps) {
-  const isDisabled = DISABLED_STATUSES.includes(analysis.status);
+export default function DashboardTableMobile({
+  analysis,
+  isSelected,
+  onToggleSelection,
+}: DashboardTableMobileProps) {
+  const isDisabled = DISABLED_STATUSES.includes(analysis.status)
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
       <div className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-medium text-gray-900 truncate" title={analysis.title || 'No title'}>
+            <h3
+              className="text-lg font-medium text-gray-900 truncate"
+              title={analysis.title || 'No title'}
+            >
               {analysis.title || 'No title'}
             </h3>
             <p className="text-sm text-gray-500 truncate mt-1" title={analysis.url}>
@@ -45,7 +52,10 @@ export default function DashboardTableMobile({ analysis, isSelected, onToggleSel
             <span className="ml-2 text-gray-900 flex items-center gap-2">
               {analysis.html_version || '-'}
               {analysis.has_login_form && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800" title="Login form detected">
+                <span
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                  title="Login form detected"
+                >
                   Login
                 </span>
               )}
@@ -71,7 +81,7 @@ export default function DashboardTableMobile({ analysis, isSelected, onToggleSel
             }`}
             onClick={(e) => {
               if (isDisabled) {
-                e.preventDefault();
+                e.preventDefault()
               }
             }}
           >
@@ -81,5 +91,5 @@ export default function DashboardTableMobile({ analysis, isSelected, onToggleSel
         </div>
       </div>
     </div>
-  );
+  )
 }

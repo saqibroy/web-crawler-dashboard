@@ -1,18 +1,18 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { CHART_COLORS } from '../../utils/analysisUtils';
-import EmptyState from '../common/EmptyState';
-import { Heading } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { CHART_COLORS } from '../../utils/analysisUtils'
+import EmptyState from '../common/EmptyState'
+import { Heading } from 'lucide-react'
 
 interface AnalysisHeadingsChartProps {
-  headings: Record<string, number> | null;
+  headings: Record<string, number> | null
 }
 
 export default function AnalysisHeadingsChart({ headings }: AnalysisHeadingsChartProps) {
   const data = Object.entries(headings || {})
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([name, value]) => ({ name: name.toUpperCase(), value }));
+    .map(([name, value]) => ({ name: name.toUpperCase(), value }))
 
-  const hasData = data.some(item => item.value > 0);
+  const hasData = data.some((item) => item.value > 0)
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -44,5 +44,5 @@ export default function AnalysisHeadingsChart({ headings }: AnalysisHeadingsChar
         </div>
       </div>
     </div>
-  );
+  )
 }

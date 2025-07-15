@@ -1,13 +1,13 @@
-import EmptyState from '../common/EmptyState';
-import { Link2Off } from 'lucide-react';
+import EmptyState from '../common/EmptyState'
+import { Link2Off } from 'lucide-react'
 
 interface AnalysisBrokenLinksProps {
-  brokenLinks: Record<string, string> | null;
+  brokenLinks: Record<string, string> | null
 }
 
 export default function AnalysisBrokenLinks({ brokenLinks }: AnalysisBrokenLinksProps) {
-  const links = Object.entries(brokenLinks || {});
-  const getStatusCode = (status: string) => status.match(/^(\d{3})/)?.[1] || status;
+  const links = Object.entries(brokenLinks || {})
+  const getStatusCode = (status: string) => status.match(/^(\d{3})/)?.[1] || status
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-red-200">
@@ -18,7 +18,10 @@ export default function AnalysisBrokenLinks({ brokenLinks }: AnalysisBrokenLinks
         {links.length > 0 ? (
           <div className="space-y-3 max-h-64 overflow-y-auto">
             {links.map(([url, status]) => (
-              <div key={url} className="flex items-start space-x-3 p-3 bg-red-50 rounded-lg border border-red-200">
+              <div
+                key={url}
+                className="flex items-start space-x-3 p-3 bg-red-50 rounded-lg border border-red-200"
+              >
                 <span className="text-red-600 font-mono">[{getStatusCode(status)}]</span>
                 <a
                   href={url}
@@ -40,5 +43,5 @@ export default function AnalysisBrokenLinks({ brokenLinks }: AnalysisBrokenLinks
         )}
       </div>
     </div>
-  );
+  )
 }

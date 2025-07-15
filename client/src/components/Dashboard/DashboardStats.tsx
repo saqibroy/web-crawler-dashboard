@@ -1,22 +1,22 @@
 // client/src/components/Dashboard/DashboardStats.tsx
-import { BarChart2, CheckCircle, Hourglass, XOctagon, XCircle } from 'lucide-react';
-import type { DashboardStatsData } from '../../types';
+import { BarChart2, CheckCircle, Hourglass, XOctagon, XCircle } from 'lucide-react'
+import type { DashboardStatsData } from '../../types'
 
 interface StatCardProps {
-  icon: React.ElementType;
-  title: string;
-  value: number;
-  status?: string;
-  isActive?: boolean;
-  onClick?: () => void;
+  icon: React.ElementType
+  title: string
+  value: number
+  status?: string
+  isActive?: boolean
+  onClick?: () => void
 }
 
 const StatCard = ({ icon: Icon, title, value, status, isActive, onClick }: StatCardProps) => {
-  const bgColor = isActive && status ? getBgColorForStatus(status) : 'bg-white';
-  const textColor = status ? getTextColorForStatus(status) : 'text-blue-600';
-  
+  const bgColor = isActive && status ? getBgColorForStatus(status) : 'bg-white'
+  const textColor = status ? getTextColorForStatus(status) : 'text-blue-600'
+
   return (
-    <div 
+    <div
       className={`${bgColor} ${onClick ? 'cursor-pointer' : ''} rounded-lg shadow-sm p-6 border border-gray-200 transition-colors`}
       onClick={onClick}
     >
@@ -34,24 +34,29 @@ const StatCard = ({ icon: Icon, title, value, status, isActive, onClick }: StatC
         </div>
       </div>
     </div>
-  );
-};
-
-interface DashboardStatsProps {
-  stats: DashboardStatsData;
-  activeStatus?: string;
-  onStatusClick?: (status: string) => void;
-  onTotalClick?: () => void;
+  )
 }
 
-export default function DashboardStats({ stats, activeStatus, onStatusClick, onTotalClick }: DashboardStatsProps) {
+interface DashboardStatsProps {
+  stats: DashboardStatsData
+  activeStatus?: string
+  onStatusClick?: (status: string) => void
+  onTotalClick?: () => void
+}
+
+export default function DashboardStats({
+  stats,
+  activeStatus,
+  onStatusClick,
+  onTotalClick,
+}: DashboardStatsProps) {
   const statusList = [
     { key: 'completed', title: 'Completed', icon: CheckCircle },
     { key: 'processing', title: 'Processing', icon: Hourglass },
     { key: 'queued', title: 'Queued', icon: Hourglass },
     { key: 'failed', title: 'Failed', icon: XOctagon },
     { key: 'cancelled', title: 'Cancelled', icon: XCircle },
-  ];
+  ]
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
@@ -77,7 +82,7 @@ export default function DashboardStats({ stats, activeStatus, onStatusClick, onT
         />
       ))}
     </div>
-  );
+  )
 }
 
 function getTextColorForStatus(status: string) {
@@ -87,8 +92,8 @@ function getTextColorForStatus(status: string) {
     queued: 'text-gray-600',
     failed: 'text-red-600',
     cancelled: 'text-orange-600',
-  };
-  return colors[status as keyof typeof colors] || 'text-gray-600';
+  }
+  return colors[status as keyof typeof colors] || 'text-gray-600'
 }
 
 function getBgColorForStatus(status: string) {
@@ -98,6 +103,6 @@ function getBgColorForStatus(status: string) {
     queued: 'bg-gray-50',
     failed: 'bg-red-50',
     cancelled: 'bg-orange-50',
-  };
-  return colors[status as keyof typeof colors] || 'bg-white';
+  }
+  return colors[status as keyof typeof colors] || 'bg-white'
 }

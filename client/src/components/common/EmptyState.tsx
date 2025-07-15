@@ -1,11 +1,11 @@
 // client/src/components/common/EmptyState.tsx
-import { FileText } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { FileText } from 'lucide-react'
+import type { ReactNode } from 'react'
 
 interface EmptyStateProps {
-  title?: string;
-  message?: string;
-  icon?: ReactNode;
+  title?: string
+  message?: string
+  icon?: ReactNode
 }
 
 export default function EmptyState({ title = 'No data found', message, icon }: EmptyStateProps) {
@@ -15,5 +15,5 @@ export default function EmptyState({ title = 'No data found', message, icon }: E
       <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
       {message && <p className="text-gray-600">{message}</p>}
     </div>
-  );
+  )
 }

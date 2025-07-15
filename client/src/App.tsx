@@ -1,15 +1,15 @@
 // App.js
-import { useEffect } from 'react';
-import { getAuthToken } from './services/api';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Dashboard from './pages/Dashboard'; // Your main dashboard component
-import Analysis from './pages/Analysis'; // Your nested detail page
-import { Toaster } from 'react-hot-toast';
+import { useEffect } from 'react'
+import { getAuthToken } from './services/api'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Dashboard from './pages/Dashboard' // Your main dashboard component
+import Analysis from './pages/Analysis' // Your nested detail page
+import { Toaster } from 'react-hot-toast'
 
 function App() {
   useEffect(() => {
-    getAuthToken().catch(console.error);
-  }, []);
+    getAuthToken().catch(console.error)
+  }, [])
 
   return (
     <>
@@ -21,9 +21,7 @@ function App() {
             <div className="flex justify-between items-center py-6">
               {/* Dashboard Title / Branding */}
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  Web Crawler Dashboard
-                </h1>
+                <h1 className="text-3xl font-bold text-gray-900">Web Crawler Dashboard</h1>
                 <p className="mt-1 text-sm text-gray-600">
                   Analyze and monitor website crawl results with ease
                 </p>
@@ -49,14 +47,12 @@ function App() {
             <p className="text-sm text-gray-600">
               &copy; {new Date().getFullYear()} Web Crawler. All rights reserved.
             </p>
-            <p className="mt-2 text-xs text-gray-500">
-              Designed for powerful web insights.
-            </p>
+            <p className="mt-2 text-xs text-gray-500">Designed for powerful web insights.</p>
           </div>
         </footer>
       </BrowserRouter>
     </>
-  );
+  )
 }
 
-export default App;
+export default App

@@ -1,23 +1,28 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
 interface DashboardPaginationProps {
-  page: number;
-  limit: number;
-  totalAnalyses: number;
-  totalPages: number;
-  onPageChange: (newPage: number) => void;
-  disableControls: boolean;
+  page: number
+  limit: number
+  totalAnalyses: number
+  totalPages: number
+  onPageChange: (newPage: number) => void
+  disableControls: boolean
 }
 
 interface PaginationButtonProps {
-  onClick: ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
-  disabled: boolean;
-  className?: string;
-  children: ReactNode;
+  onClick: ButtonHTMLAttributes<HTMLButtonElement>['onClick']
+  disabled: boolean
+  className?: string
+  children: ReactNode
 }
 
-const PaginationButton = ({ onClick, disabled, className = '', children }: PaginationButtonProps) => (
+const PaginationButton = ({
+  onClick,
+  disabled,
+  className = '',
+  children,
+}: PaginationButtonProps) => (
   <button
     onClick={onClick}
     disabled={disabled}
@@ -25,13 +30,13 @@ const PaginationButton = ({ onClick, disabled, className = '', children }: Pagin
   >
     {children}
   </button>
-);
+)
 
 interface NavButtonProps {
-  onClick: ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
-  disabled: boolean;
-  className?: string;
-  children: ReactNode;
+  onClick: ButtonHTMLAttributes<HTMLButtonElement>['onClick']
+  disabled: boolean
+  className?: string
+  children: ReactNode
 }
 
 const NavButton = ({ onClick, disabled, className = '', children }: NavButtonProps) => (
@@ -42,7 +47,7 @@ const NavButton = ({ onClick, disabled, className = '', children }: NavButtonPro
   >
     {children}
   </button>
-);
+)
 
 export default function DashboardPagination({
   page,
@@ -52,12 +57,12 @@ export default function DashboardPagination({
   onPageChange,
   disableControls,
 }: DashboardPaginationProps) {
-  if (totalAnalyses === 0) return null;
+  if (totalAnalyses === 0) return null
 
-  const startIndex = Math.min((page - 1) * limit + 1, totalAnalyses);
-  const endIndex = Math.min(page * limit, totalAnalyses);
-  const isFirstPage = page === 1;
-  const isLastPage = page === totalPages;
+  const startIndex = Math.min((page - 1) * limit + 1, totalAnalyses)
+  const endIndex = Math.min(page * limit, totalAnalyses)
+  const isFirstPage = page === 1
+  const isLastPage = page === totalPages
 
   return (
     <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
@@ -95,11 +100,11 @@ export default function DashboardPagination({
           >
             <ChevronLeft className="h-5 w-5" />
           </NavButton>
-          
+
           <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
             {page} of {totalPages}
           </span>
-          
+
           <NavButton
             onClick={() => onPageChange(page + 1)}
             disabled={isLastPage || disableControls}
@@ -110,5 +115,5 @@ export default function DashboardPagination({
         </nav>
       </div>
     </div>
-  );
+  )
 }

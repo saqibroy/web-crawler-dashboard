@@ -1,19 +1,22 @@
 // client/src/components/Analysis/AnalysisLinksChart.tsx
-import { PieChart, Pie, Tooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
-import { CHART_COLORS } from '../../utils/analysisUtils';
-import EmptyState from '../common/EmptyState';
+import { PieChart, Pie, Tooltip, ResponsiveContainer, Cell, Legend } from 'recharts'
+import { CHART_COLORS } from '../../utils/analysisUtils'
+import EmptyState from '../common/EmptyState'
 
 interface AnalysisLinksChartProps {
-  internalLinks: number;
-  externalLinks: number;
+  internalLinks: number
+  externalLinks: number
 }
 
-export default function AnalysisLinksChart({ internalLinks, externalLinks }: AnalysisLinksChartProps) {
+export default function AnalysisLinksChart({
+  internalLinks,
+  externalLinks,
+}: AnalysisLinksChartProps) {
   const linkData = [
     { name: 'Internal Links', value: internalLinks || 0 },
     { name: 'External Links', value: externalLinks || 0 },
-  ];
-  const isEmpty = (internalLinks || 0) === 0 && (externalLinks || 0) === 0;
+  ]
+  const isEmpty = (internalLinks || 0) === 0 && (externalLinks || 0) === 0
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -31,9 +34,20 @@ export default function AnalysisLinksChart({ internalLinks, externalLinks }: Ana
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={linkData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                <Pie
+                  data={linkData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  label
+                >
                   {linkData.map((_entry, index) => (
-                    <Cell key={`cell-link-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    <Cell
+                      key={`cell-link-${index}`}
+                      fill={CHART_COLORS[index % CHART_COLORS.length]}
+                    />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value: number) => `${value} links`} />
@@ -44,5 +58,5 @@ export default function AnalysisLinksChart({ internalLinks, externalLinks }: Ana
         </div>
       </div>
     </div>
-  );
-} 
+  )
+}

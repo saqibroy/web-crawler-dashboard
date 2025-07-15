@@ -1,20 +1,25 @@
-import { Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
-import type { Analysis } from '../../../types';
-import StatusBadge from '../../common/StatusBadge';
+import { Link } from 'react-router-dom'
+import { ChevronRight } from 'lucide-react'
+import type { Analysis } from '../../../types'
+import StatusBadge from '../../common/StatusBadge'
 
 interface DashboardTableRowProps {
-  analysis: Analysis;
-  isSelected: boolean;
-  onToggleSelection: (id: string) => void;
-  index: number;
+  analysis: Analysis
+  isSelected: boolean
+  onToggleSelection: (id: string) => void
+  index: number
 }
 
-const DISABLED_STATUSES = ['cancelled', 'queued', 'processing', 'failed'];
+const DISABLED_STATUSES = ['cancelled', 'queued', 'processing', 'failed']
 
-export default function DashboardTableRow({ analysis, isSelected, onToggleSelection, index }: DashboardTableRowProps) {
-  const isDisabled = DISABLED_STATUSES.includes(analysis.status);
-  const rowClasses = `hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`;
+export default function DashboardTableRow({
+  analysis,
+  isSelected,
+  onToggleSelection,
+  index,
+}: DashboardTableRowProps) {
+  const isDisabled = DISABLED_STATUSES.includes(analysis.status)
+  const rowClasses = `hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`
 
   return (
     <tr className={rowClasses}>
@@ -44,7 +49,10 @@ export default function DashboardTableRow({ analysis, isSelected, onToggleSelect
         <div className="flex items-center gap-2">
           {analysis.html_version || '-'}
           {analysis.has_login_form && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800" title="Login form detected">
+            <span
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+              title="Login form detected"
+            >
               Login
             </span>
           )}
@@ -66,7 +74,7 @@ export default function DashboardTableRow({ analysis, isSelected, onToggleSelect
           }`}
           onClick={(e) => {
             if (isDisabled) {
-              e.preventDefault();
+              e.preventDefault()
             }
           }}
         >
@@ -75,5 +83,5 @@ export default function DashboardTableRow({ analysis, isSelected, onToggleSelect
         </Link>
       </td>
     </tr>
-  );
+  )
 }

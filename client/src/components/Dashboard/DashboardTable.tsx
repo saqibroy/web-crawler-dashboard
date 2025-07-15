@@ -1,19 +1,19 @@
 // client/src/components/DashboardTable.tsx
-import type { Analysis, SortKey } from '../../types';
-import { sortAnalyses } from '../../utils/analysisUtils';
-import LoadingSpinner from '../common/LoadingSpinner';
-import EmptyState from '../common/EmptyState';
-import DashboardTableHeader from './DashboardTable/DashboardTableHeader';
-import DashboardTableRow from './DashboardTable/DashboardTableRow';
-import DashboardTableMobile from './DashboardTable/DashboardTableMobile';
+import type { Analysis, SortKey } from '../../types'
+import { sortAnalyses } from '../../utils/analysisUtils'
+import LoadingSpinner from '../common/LoadingSpinner'
+import EmptyState from '../common/EmptyState'
+import DashboardTableHeader from './DashboardTable/DashboardTableHeader'
+import DashboardTableRow from './DashboardTable/DashboardTableRow'
+import DashboardTableMobile from './DashboardTable/DashboardTableMobile'
 
 interface DashboardTableProps {
-  analyses: Analysis[];
-  isLoading: boolean;
-  selectedIds: string[];
-  onSelect: (ids: string[]) => void;
-  sortConfig: { key: SortKey; direction: 'asc' | 'desc' } | null;
-  onSort: (key: SortKey) => void;
+  analyses: Analysis[]
+  isLoading: boolean
+  selectedIds: string[]
+  onSelect: (ids: string[]) => void
+  sortConfig: { key: SortKey; direction: 'asc' | 'desc' } | null
+  onSort: (key: SortKey) => void
 }
 
 export default function DashboardTable({
@@ -25,19 +25,15 @@ export default function DashboardTable({
   onSort,
 }: DashboardTableProps) {
   const toggleSelection = (id: string) => {
-    onSelect(
-      selectedIds.includes(id)
-        ? selectedIds.filter(i => i !== id)
-        : [...selectedIds, id]
-    );
-  };
+    onSelect(selectedIds.includes(id) ? selectedIds.filter((i) => i !== id) : [...selectedIds, id])
+  }
 
   const sortedAnalyses = sortConfig
     ? [...analyses].sort((a, b) => sortAnalyses(a, b, sortConfig.key, sortConfig.direction))
-    : analyses;
+    : analyses
 
   if (isLoading) {
-    return <LoadingSpinner message="Loading analyses..." />;
+    return <LoadingSpinner message="Loading analyses..." />
   }
 
   if (analyses.length === 0) {
@@ -46,7 +42,7 @@ export default function DashboardTable({
         title="No analyses found"
         message="Submit a URL above to get started with your first analysis!"
       />
-    );
+    )
   }
 
   return (
@@ -75,7 +71,7 @@ export default function DashboardTable({
 
       {/* Mobile Card Layout */}
       <div className="md:hidden space-y-4">
-        {sortedAnalyses.map(analysis => (
+        {sortedAnalyses.map((analysis) => (
           <DashboardTableMobile
             key={analysis.id}
             analysis={analysis}
@@ -85,5 +81,5 @@ export default function DashboardTable({
         ))}
       </div>
     </div>
-  );
+  )
 }

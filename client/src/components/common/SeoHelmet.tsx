@@ -1,14 +1,15 @@
-import React from 'react';
-import { Helmet } from 'react-helmet-async';
+import React from 'react'
+import { Helmet } from 'react-helmet-async'
 
 interface SeoHelmetProps {
-  title: string;
-  description?: string;
-  canonicalUrl?: string;
+  title: string
+  description?: string
+  canonicalUrl?: string
 }
 
 const SeoHelmet: React.FC<SeoHelmetProps> = ({ title, description, canonicalUrl }) => {
-  const defaultDescription = "Analyze and monitor website crawl results with ease using the Web Crawler Dashboard.";
+  const defaultDescription =
+    'Analyze and monitor website crawl results with ease using the Web Crawler Dashboard.'
 
   return (
     <Helmet>
@@ -22,7 +23,7 @@ const SeoHelmet: React.FC<SeoHelmetProps> = ({ title, description, canonicalUrl 
       {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
       <meta name="twitter:card" content="summary_large_image" />
     </Helmet>
-  );
-};
+  )
+}
 
-export default SeoHelmet; 
+export default SeoHelmet

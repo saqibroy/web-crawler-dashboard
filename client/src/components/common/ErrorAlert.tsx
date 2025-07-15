@@ -1,13 +1,13 @@
 // client/src/components/common/ErrorAlert.tsx
-import { XCircle } from 'lucide-react';
+import { XCircle } from 'lucide-react'
 
 interface ErrorAlertProps {
-  message: string | null;
-  onDismiss: () => void;
+  message: string | null
+  onDismiss: () => void
 }
 
 export default function ErrorAlert({ message, onDismiss }: ErrorAlertProps) {
-  if (!message) return null;
+  if (!message) return null
 
   return (
     <div className="mb-6 rounded-md bg-red-50 p-4 border border-red-200">
@@ -29,5 +29,5 @@ export default function ErrorAlert({ message, onDismiss }: ErrorAlertProps) {
         </div>
       </div>
     </div>
-  );
+  )
 }

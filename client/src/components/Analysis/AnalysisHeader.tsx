@@ -1,11 +1,11 @@
 // client/src/components/Analysis/AnalysisHeader.tsx
-import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import type { Analysis } from '../../types';
-import { getDetailStatusColor } from '../../utils/analysisUtils';
+import { Link } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
+import type { Analysis } from '../../types'
+import { getDetailStatusColor } from '../../utils/analysisUtils'
 
 interface AnalysisHeaderProps {
-  analysis: Analysis;
+  analysis: Analysis
 }
 
 export default function AnalysisHeader({ analysis }: AnalysisHeaderProps) {
@@ -20,9 +20,7 @@ export default function AnalysisHeader({ analysis }: AnalysisHeaderProps) {
           <h1 className="text-2xl font-bold text-gray-900 truncate">
             {analysis.title || 'Analysis Details'}
           </h1>
-          <p className="mt-1 text-sm text-gray-500 break-all">
-            {analysis.url}
-          </p>
+          <p className="mt-1 text-sm text-gray-500 break-all">{analysis.url}</p>
           {analysis.status === 'cancelled' && (
             <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
               <p className="text-sm text-yellow-800">
@@ -32,11 +30,13 @@ export default function AnalysisHeader({ analysis }: AnalysisHeaderProps) {
           )}
         </div>
         <div className="ml-4 flex-shrink-0">
-          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getDetailStatusColor(analysis.status)}`}>
+          <span
+            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getDetailStatusColor(analysis.status)}`}
+          >
             {analysis.status}
           </span>
         </div>
       </div>
     </div>
-  );
-} 
+  )
+}
