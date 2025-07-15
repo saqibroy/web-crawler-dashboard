@@ -14,13 +14,20 @@ import (
 )
 
 func Crawl(ctx context.Context, targetURL string) (*models.Analysis, error) {
-	select {
-	case <-ctx.Done():
+	if ctx.Err() != nil {
 		return nil, ctx.Err()
-	default:
 	}
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 10 {
+				return errors.New("too many redirects")
+			}
+			return nil
+		},
+	}
+
 	resp, err := client.Get(targetURL)
 	if err != nil {
 		return nil, err
@@ -31,115 +38,159 @@ func Crawl(ctx context.Context, targetURL string) (*models.Analysis, error) {
 		return nil, errors.New("non-200 status code")
 	}
 
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
 		return nil, err
-	}
-
-	analysis := &models.Analysis{
-		URL: targetURL,
 	}
 
 	parsedURL, err := url.Parse(targetURL)
 	if err != nil {
 		return nil, err
 	}
-	baseDomain := parsedURL.Host
 
-	// Improved HTML version detection
-	htmlVersion := "Unknown"
+	analysis := &models.Analysis{
+		URL:          targetURL,
+		HTMLVersion:  detectHTMLVersion(doc),
+		Title:        strings.TrimSpace(doc.Find("title").Text()),
+		Headings:     countHeadings(doc),
+		HasLoginForm: hasLoginForm(doc),
+	}
+
+	analysis.InternalLinks, analysis.ExternalLinks, analysis.BrokenLinks = processLinks(ctx, doc, parsedURL)
+
+	return analysis, nil
+}
+
+func detectHTMLVersion(doc *goquery.Document) string {
+	htmlContent, err := doc.Html()
+	if err != nil {
+		return "Unknown"
+	}
+
+	lower := strings.ToLower(htmlContent)
+
+	if strings.Contains(lower, "<!doctype html>") {
+		return "HTML5"
+	}
+	if strings.Contains(lower, "xhtml") {
+		return "XHTML"
+	}
+	if strings.Contains(lower, "html 4.01") {
+		return "HTML 4.01"
+	}
 	if doc.Find("html").Length() > 0 {
-		// Check for <!DOCTYPE html> in the raw HTML
-		if strings.Contains(strings.ToLower(doc.Text()), "<!doctype html>") {
-			htmlVersion = "HTML5"
-		} else {
-			versionAttr := doc.Find("html").AttrOr("version", "")
-			if versionAttr != "" {
-				htmlVersion = versionAttr
+		return "HTML5"
+	}
+
+	return "Unknown"
+}
+
+func countHeadings(doc *goquery.Document) map[string]interface{} {
+	headings := make(map[string]interface{})
+	for i := 1; i <= 6; i++ {
+		tag := "h" + string(rune('0'+i))
+		headings[tag] = doc.Find(tag).Length()
+	}
+	return headings
+}
+
+func hasLoginForm(doc *goquery.Document) bool {
+	// Simple check for password input
+	if doc.Find("input[type='password']").Length() > 0 {
+		return true
+	}
+
+	// Check for login form patterns
+	hasLogin := false
+	doc.Find("form").Each(func(i int, form *goquery.Selection) {
+		action := strings.ToLower(form.AttrOr("action", ""))
+		class := strings.ToLower(form.AttrOr("class", ""))
+
+		loginWords := []string{"login", "signin", "sign-in", "auth"}
+		for _, word := range loginWords {
+			if strings.Contains(action, word) || strings.Contains(class, word) {
+				hasLogin = true
+				return
 			}
 		}
-	}
-	analysis.HTMLVersion = htmlVersion
+	})
 
-	// Get title
-	analysis.Title = doc.Find("title").Text()
+	return hasLogin
+}
 
-	// Count headings
-	headings := make(map[string]int)
-	for i := 1; i <= 6; i++ {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		default:
-		}
-		tag := "h" + string(rune('0'+i))
-		count := doc.Find(tag).Length()
-		headings[tag] = count
-	}
-	headingsMap := make(map[string]interface{})
-	for k, v := range headings {
-		headingsMap[k] = v
-	}
-	analysis.Headings = headingsMap
-
-	// Check for login form
-	analysis.HasLoginForm = doc.Find("input[type='password']").Length() > 0
-
+func processLinks(ctx context.Context, doc *goquery.Document, baseURL *url.URL) (int, int, map[string]interface{}) {
 	internalCount := 0
 	externalCount := 0
 	brokenLinks := make(map[string]interface{})
+	checkedLinks := make(map[string]bool)
 
-	doc.Find("a[href]").EachWithBreak(func(_ int, s *goquery.Selection) bool {
-		select {
-		case <-ctx.Done():
-			return false // break
-		default:
-		}
+	doc.Find("a[href]").Each(func(_ int, s *goquery.Selection) {
 		href, exists := s.Attr("href")
-		if !exists || href == "" || strings.HasPrefix(href, "#") {
-			return true
+		if !exists || href == "" || strings.HasPrefix(href, "#") || strings.HasPrefix(href, "javascript:") {
+			return
 		}
+
+		// Skip non-HTTP protocols
+		if strings.HasPrefix(href, "mailto:") || strings.HasPrefix(href, "tel:") || strings.HasPrefix(href, "ftp:") {
+			return
+		}
+
 		linkURL, err := url.Parse(href)
 		if err != nil {
-			return true
+			return
 		}
+
+		// Resolve relative URLs
 		if linkURL.Host == "" {
-			linkURL = parsedURL.ResolveReference(linkURL)
+			linkURL = baseURL.ResolveReference(linkURL)
 		}
-		if linkURL.Host == baseDomain {
+
+		// Only process HTTP/HTTPS links
+		if linkURL.Scheme != "http" && linkURL.Scheme != "https" {
+			return
+		}
+
+		// Count internal vs external
+		if strings.EqualFold(linkURL.Host, baseURL.Host) {
 			internalCount++
 		} else {
 			externalCount++
 		}
-		client := &http.Client{
-			Timeout: 3 * time.Second,
-		}
-		resp, err := client.Head(linkURL.String())
-		if err != nil || resp.StatusCode >= 400 {
-			status := "Error"
-			if resp != nil {
-				status = resp.Status
+
+		// Check if broken (avoid duplicates)
+		fullURL := linkURL.String()
+		if !checkedLinks[fullURL] {
+			checkedLinks[fullURL] = true
+			if isBrokenLink(fullURL) {
+				brokenLinks[fullURL] = "Broken"
 			}
-			brokenLinks[linkURL.String()] = status
 		}
-		return true
 	})
 
-	analysis.InternalLinks = internalCount
-	analysis.ExternalLinks = externalCount
-	analysis.BrokenLinks = brokenLinks
+	return internalCount, externalCount, brokenLinks
+}
 
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
+func isBrokenLink(linkURL string) bool {
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 5 {
+				return errors.New("too many redirects")
+			}
+			return nil
+		},
 	}
 
-	return analysis, nil
+	resp, err := client.Head(linkURL)
+	if err != nil {
+		// Fallback to GET if HEAD fails
+		resp, err = client.Get(linkURL)
+		if err != nil {
+			return true
+		}
+	}
+	defer resp.Body.Close()
+
+	// 4xx and 5xx are broken, but 999 is bot protection (not broken)
+	return resp.StatusCode >= 400 && resp.StatusCode != 999
 }

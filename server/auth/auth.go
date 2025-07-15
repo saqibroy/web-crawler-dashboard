@@ -7,10 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/time/rate"
-
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/time/rate"
 )
 
 var (
@@ -20,29 +19,55 @@ var (
 
 type CustomClaims struct {
 	jwt.RegisteredClaims
-	ClientID string `json:"client_id"` // Additional custom claim
+	ClientID string `json:"client_id"`
+}
+
+// Rate limiter singleton
+var (
+	once    sync.Once
+	limiter *rate.Limiter
+)
+
+func initRateLimiter() {
+	once.Do(func() {
+		limiter = rate.NewLimiter(rate.Every(time.Minute/1000), 1000)
+	})
 }
 
 func getSecretKey() []byte {
-	key := os.Getenv("JWT_SECRET")
-	if key == "" {
-		if gin.Mode() == gin.ReleaseMode {
-			panic("JWT_SECRET environment variable not set")
-		}
-		// Default for development only
-		return []byte("development-secret")
+	if key := os.Getenv("JWT_SECRET"); key != "" {
+		return []byte(key)
 	}
-	return []byte(key)
+	if gin.Mode() == gin.ReleaseMode {
+		panic("JWT_SECRET environment variable not set")
+	}
+	return []byte("development-secret")
+}
+
+func extractToken(c *gin.Context) string {
+	header := c.GetHeader("Authorization")
+	if len(header) > 7 && strings.HasPrefix(header, "Bearer ") {
+		return header[7:]
+	}
+	return ""
+}
+
+func errorResponse(c *gin.Context, status int, err error, details ...string) {
+	response := gin.H{"error": err.Error()}
+	if len(details) > 0 {
+		response["details"] = details[0]
+	}
+	c.AbortWithStatusJSON(status, response)
 }
 
 func GenerateAccessToken() (string, error) {
 	claims := &CustomClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Issuer:    "web-crawler-api",
 		},
-		ClientID: "web-client", // Can be dynamic in real implementation
+		ClientID: "web-client",
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -50,26 +75,23 @@ func GenerateAccessToken() (string, error) {
 }
 
 func AuthMiddleware() gin.HandlerFunc {
-	var once sync.Once
-	var limiter *rate.Limiter
-	once.Do(func() {
-		// Increased from 10 to 1000 requests per minute (much more reasonable for dashboard)
-		limiter = rate.NewLimiter(rate.Every(time.Minute/1000), 1000)
-	})
+	initRateLimiter()
+
 	return func(c *gin.Context) {
+		// Rate limiting
 		if !limiter.Allow() {
-			c.AbortWithStatusJSON(429, gin.H{"error": "Too many requests"})
-			return
-		}
-		tokenString := extractToken(c)
-		if tokenString == "" {
-			c.AbortWithStatusJSON(401, gin.H{
-				"error":   ErrMissingToken.Error(),
-				"details": "Format: 'Authorization: Bearer <token>'",
-			})
+			errorResponse(c, 429, errors.New("too many requests"))
 			return
 		}
 
+		// Extract token
+		tokenString := extractToken(c)
+		if tokenString == "" {
+			errorResponse(c, 401, ErrMissingToken, "Format: 'Authorization: Bearer <token>'")
+			return
+		}
+
+		// Parse and validate token
 		token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, errors.New("unexpected signing method")
@@ -77,27 +99,15 @@ func AuthMiddleware() gin.HandlerFunc {
 			return getSecretKey(), nil
 		})
 
-		if err != nil {
-			c.AbortWithStatusJSON(401, gin.H{
-				"error":   ErrInvalidToken.Error(),
-				"details": err.Error(),
-			})
-			return
-		}
-
-		if !token.Valid {
-			c.AbortWithStatusJSON(401, gin.H{"error": ErrInvalidToken.Error()})
+		if err != nil || !token.Valid {
+			details := ""
+			if err != nil {
+				details = err.Error()
+			}
+			errorResponse(c, 401, ErrInvalidToken, details)
 			return
 		}
 
 		c.Next()
 	}
-}
-
-func extractToken(c *gin.Context) string {
-	bearerToken := c.GetHeader("Authorization")
-	if len(bearerToken) > 7 && strings.HasPrefix(bearerToken, "Bearer ") {
-		return bearerToken[7:]
-	}
-	return ""
 }

@@ -1,4 +1,3 @@
-// client/src/components/AnalysisTable/MobileCard.tsx
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import type { Analysis } from '../../../types';
@@ -10,9 +9,13 @@ interface DashboardTableMobileProps {
   onToggleSelection: (id: string) => void;
 }
 
+const DISABLED_STATUSES = ['cancelled', 'queued', 'processing', 'failed'];
+
 export default function DashboardTableMobile({ analysis, isSelected, onToggleSelection }: DashboardTableMobileProps) {
+  const isDisabled = DISABLED_STATUSES.includes(analysis.status);
+
   return (
-    <div key={analysis.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
       <div className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
@@ -62,12 +65,12 @@ export default function DashboardTableMobile({ analysis, isSelected, onToggleSel
           <Link
             to={`/analysis/${analysis.id}`}
             className={`inline-flex items-center text-sm font-medium transition-colors ${
-              analysis.status === 'cancelled' || analysis.status === 'queued' || analysis.status === 'processing' || analysis.status === 'failed'
+              isDisabled
                 ? 'text-gray-400 cursor-not-allowed pointer-events-none'
                 : 'text-blue-600 hover:text-blue-900'
             }`}
             onClick={(e) => {
-              if (analysis.status === 'cancelled' || analysis.status === 'queued' || analysis.status === 'processing' || analysis.status === 'failed') {
+              if (isDisabled) {
                 e.preventDefault();
               }
             }}

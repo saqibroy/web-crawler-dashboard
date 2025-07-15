@@ -1,4 +1,4 @@
-// client/src/components/AnalysisTable.tsx
+// client/src/components/DashboardTable.tsx
 import type { Analysis, SortKey } from '../../types';
 import { sortAnalyses } from '../../utils/analysisUtils';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -7,6 +7,15 @@ import DashboardTableHeader from './DashboardTable/DashboardTableHeader';
 import DashboardTableRow from './DashboardTable/DashboardTableRow';
 import DashboardTableMobile from './DashboardTable/DashboardTableMobile';
 
+interface DashboardTableProps {
+  analyses: Analysis[];
+  isLoading: boolean;
+  selectedIds: string[];
+  onSelect: (ids: string[]) => void;
+  sortConfig: { key: SortKey; direction: 'asc' | 'desc' } | null;
+  onSort: (key: SortKey) => void;
+}
+
 export default function DashboardTable({
   analyses,
   isLoading,
@@ -14,14 +23,7 @@ export default function DashboardTable({
   onSelect,
   sortConfig,
   onSort,
-}: {
-  analyses: Analysis[];
-  isLoading: boolean;
-  selectedIds: string[];
-  onSelect: (ids: string[]) => void;
-  sortConfig: { key: SortKey; direction: 'asc' | 'desc' } | null;
-  onSort: (key: SortKey) => void;
-}) {
+}: DashboardTableProps) {
   const toggleSelection = (id: string) => {
     onSelect(
       selectedIds.includes(id)
@@ -34,8 +36,6 @@ export default function DashboardTable({
     ? [...analyses].sort((a, b) => sortAnalyses(a, b, sortConfig.key, sortConfig.direction))
     : analyses;
 
-  const showOverlaySpinner = isLoading && analyses.length > 0;
-
   if (isLoading) {
     return <LoadingSpinner message="Loading analyses..." />;
   }
@@ -43,19 +43,14 @@ export default function DashboardTable({
   if (analyses.length === 0) {
     return (
       <EmptyState
-        title={"No analyses found"}
-        message={"Submit a URL above to get started with your first analysis!"}
+        title="No analyses found"
+        message="Submit a URL above to get started with your first analysis!"
       />
     );
   }
 
   return (
     <div className="relative overflow-x-auto">
-      {showOverlaySpinner && (
-        <div className="absolute inset-0 bg-white bg-opacity-60 flex items-center justify-center z-10">
-          <LoadingSpinner size="md" message="Refreshing..." />
-        </div>
-      )}
       {/* Desktop Table */}
       <table className="min-w-full divide-y divide-gray-200 hidden md:table table-auto">
         <DashboardTableHeader

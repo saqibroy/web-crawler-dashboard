@@ -12,112 +12,139 @@ import (
 	"github.com/saqibroy/web-crawler-dashboard/server/worker"
 )
 
+// Request/Response structs
+type URLRequest struct {
+	URL string `json:"url" binding:"required"`
+}
+
+type IDsRequest struct {
+	IDs []string `json:"ids" binding:"required"`
+}
+
+// Helper functions
 func isValidURL(u string) bool {
 	parsed, err := url.ParseRequestURI(u)
 	if err != nil {
 		return false
 	}
-	if parsed.Scheme != "http" && parsed.Scheme != "https" {
-		return false
-	}
-	if parsed.Host == "" || strings.Contains(parsed.Host, " ") {
-		return false
-	}
-	return true
+	return (parsed.Scheme == "http" || parsed.Scheme == "https") &&
+		parsed.Host != "" &&
+		!strings.Contains(parsed.Host, " ")
 }
 
-func SubmitURL(c *gin.Context) {
-	var req struct {
-		URL string `json:"url" binding:"required"`
+func parseIntParam(c *gin.Context, param string, defaultValue int) (int, error) {
+	if value, err := strconv.Atoi(c.DefaultQuery(param, strconv.Itoa(defaultValue))); err != nil || value < 1 {
+		return 0, fmt.Errorf("invalid %s parameter", param)
+	} else {
+		return value, nil
 	}
+}
 
+func validateUUIDs(ids []string) error {
+	if len(ids) == 0 {
+		return fmt.Errorf("no IDs provided")
+	}
+	for _, id := range ids {
+		if len(id) != 36 {
+			return fmt.Errorf("invalid ID format: %s", id)
+		}
+	}
+	return nil
+}
+
+func errorResponse(c *gin.Context, status int, code, message string, details ...interface{}) {
+	response := gin.H{"error": code, "message": message}
+	if len(details) > 0 {
+		response["details"] = details[0]
+	}
+	c.JSON(status, response)
+}
+
+// API Handlers
+func SubmitURL(c *gin.Context) {
+	var req URLRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": "invalid_request", "message": "We couldn't process your request. Please check your input and try again.", "details": err.Error()})
+		errorResponse(c, 400, "invalid_request", "Invalid request format", err.Error())
 		return
 	}
 
 	if !isValidURL(req.URL) {
-		c.JSON(400, gin.H{"error": "invalid_url", "message": "The website address you entered is not valid. Please check and try again."})
+		errorResponse(c, 400, "invalid_url", "Invalid URL format")
 		return
 	}
 
-	analysis := models.Analysis{
-		URL:    req.URL,
-		Status: models.Queued,
-	}
-
-	result := db.DB.Create(&analysis)
-	if result.Error != nil {
-		c.JSON(500, gin.H{"error": "db_create_failed", "message": "Sorry, we couldn't save your analysis. Please try again later.", "details": result.Error.Error()})
+	analysis := models.Analysis{URL: req.URL, Status: models.Queued}
+	if err := db.DB.Create(&analysis).Error; err != nil {
+		errorResponse(c, 500, "db_create_failed", "Failed to save analysis", err.Error())
 		return
 	}
 
-	c.JSON(202, gin.H{
-		"id":     analysis.ID,
-		"status": analysis.Status,
-	})
+	c.JSON(202, gin.H{"id": analysis.ID, "status": analysis.Status})
 }
 
 func GetAnalyses(c *gin.Context) {
-	page, errPage := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, errLimit := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	search := c.DefaultQuery("search", "")        // New: search parameter
-	sortBy := c.DefaultQuery("sort_by", "")       // New: sort_by parameter
-	sortOrder := c.DefaultQuery("sort_order", "") // New: sort_order parameter
-
-	if errPage != nil || page < 1 {
-		c.JSON(400, gin.H{"error": "invalid_page", "message": "The page number is not valid. Please try again."})
-		return
-	}
-	if errLimit != nil || limit < 1 {
-		c.JSON(400, gin.H{"error": "invalid_limit", "message": "The number of results per page is not valid. Please try again."})
+	// Parse parameters
+	page, err := parseIntParam(c, "page", 1)
+	if err != nil {
+		errorResponse(c, 400, "invalid_page", "Invalid page number")
 		return
 	}
 
-	var analyses []models.Analysis
-	var total int64 // To store total count
+	limit, err := parseIntParam(c, "limit", 20)
+	if err != nil {
+		errorResponse(c, 400, "invalid_limit", "Invalid limit value")
+		return
+	}
 
+	search := c.DefaultQuery("search", "")
+	sortBy := c.DefaultQuery("sort_by", "")
+	sortOrder := c.DefaultQuery("sort_order", "desc")
+	statusFilter := c.DefaultQuery("status", "")
+
+	// Validate status filter
+	if statusFilter != "" {
+		validStatuses := map[string]bool{
+			"queued": true, "processing": true, "completed": true,
+			"failed": true, "cancelled": true,
+		}
+		if !validStatuses[statusFilter] {
+			errorResponse(c, 400, "invalid_status_filter", "Invalid status filter")
+			return
+		}
+	}
+
+	// Build query
 	query := db.DB.Model(&models.Analysis{})
 
-	// Apply search filter
+	// Apply filters
 	if search != "" {
 		query = query.Where("url LIKE ? OR title LIKE ?", "%"+search+"%", "%"+search+"%")
+	}
+	if statusFilter != "" {
+		query = query.Where("status = ?", statusFilter)
 	}
 
 	// Apply sorting
 	if sortBy != "" {
-		order := "desc" // Default sort order
-		if sortOrder == "asc" {
-			order = "asc"
-		}
-		query = query.Order(fmt.Sprintf("%s %s", sortBy, order))
+		query = query.Order(fmt.Sprintf("%s %s", sortBy, sortOrder))
 	} else {
-		// Default sorting: queued/processing first, then by updated_at desc (fallback to created_at desc if updated_at is null)
 		query = query.Order("CASE WHEN status IN ('queued', 'processing') THEN 0 ELSE 1 END, COALESCE(updated_at, created_at) desc")
 	}
 
-	statusFilter := c.DefaultQuery("status", "")
-	if statusFilter != "" {
-		validStatuses := map[string]bool{"queued": true, "processing": true, "completed": true, "failed": true, "cancelled": true}
-		if !validStatuses[statusFilter] {
-			c.JSON(400, gin.H{"error": "invalid_status_filter", "message": "The status filter you selected is not valid."})
-			return
-		}
-		query = query.Where("status = ?", statusFilter)
-	}
+	// Get total count and data
+	var total int64
+	query.Count(&total)
 
-	query.Count(&total) // Get total count before pagination
-
-	// Get global status counts
-	var statusCounts = map[string]int64{}
-	statuses := []models.AnalysisStatus{models.Completed, models.Failed, models.Processing, models.Queued, models.Cancelled}
-	for _, s := range statuses {
-		var count int64
-		db.DB.Model(&models.Analysis{}).Where("status = ?", s).Count(&count)
-		statusCounts[string(s)] = count
-	}
-
+	var analyses []models.Analysis
 	query.Offset((page - 1) * limit).Limit(limit).Find(&analyses)
+
+	// Get status counts
+	statusCounts := make(map[string]int64)
+	for _, status := range []models.AnalysisStatus{models.Completed, models.Failed, models.Processing, models.Queued, models.Cancelled} {
+		var count int64
+		db.DB.Model(&models.Analysis{}).Where("status = ?", status).Count(&count)
+		statusCounts[string(status)] = count
+	}
 
 	c.JSON(200, gin.H{
 		"data":          analyses,
@@ -126,60 +153,44 @@ func GetAnalyses(c *gin.Context) {
 	})
 }
 
-// Delete analyses by IDs
 func DeleteAnalyses(c *gin.Context) {
-	var req struct {
-		IDs []string `json:"ids" binding:"required"`
-	}
+	var req IDsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": "invalid_request", "message": "We couldn't process your request. Please check your input and try again.", "details": err.Error()})
+		errorResponse(c, 400, "invalid_request", "Invalid request format", err.Error())
 		return
 	}
-	if len(req.IDs) == 0 {
-		c.JSON(400, gin.H{"error": "no_ids_provided", "message": "No analyses were selected. Please select at least one and try again."})
+
+	if err := validateUUIDs(req.IDs); err != nil {
+		errorResponse(c, 400, "invalid_ids", err.Error())
 		return
 	}
-	for _, id := range req.IDs {
-		if len(id) != 36 { // UUID length
-			c.JSON(400, gin.H{"error": "invalid_id_format", "message": "We couldn't find one of the selected analyses. Please refresh and try again.", "id": id})
-			return
-		}
-	}
+
 	result := db.DB.Delete(&models.Analysis{}, req.IDs)
 	if result.Error != nil {
-		c.JSON(500, gin.H{"error": "db_delete_failed", "message": "Sorry, we couldn't delete the selected analyses. Please try again later.", "details": result.Error.Error()})
+		errorResponse(c, 500, "db_delete_failed", "Failed to delete analyses", result.Error.Error())
 		return
 	}
+
 	c.JSON(200, gin.H{"deleted": result.RowsAffected})
 }
 
-// Stop analyses by IDs (cancel queued or in-progress)
 func StopAnalyses(c *gin.Context) {
-	var req struct {
-		IDs []string `json:"ids" binding:"required"`
-	}
+	var req IDsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": "invalid_request", "message": "We couldn't process your request. Please check your input and try again.", "details": err.Error()})
+		errorResponse(c, 400, "invalid_request", "Invalid request format", err.Error())
 		return
-	}
-	if len(req.IDs) == 0 {
-		c.JSON(400, gin.H{"error": "no_ids_provided", "message": "No analyses were selected. Please select at least one and try again."})
-		return
-	}
-	for _, id := range req.IDs {
-		if len(id) != 36 {
-			c.JSON(400, gin.H{"error": "invalid_id_format", "message": "We couldn't find one of the selected analyses. Please refresh and try again.", "id": id})
-			return
-		}
 	}
 
-	// Update status to cancelled and clear all analysis data for queued and processing analyses
-	var stopped int64 = 0
+	if err := validateUUIDs(req.IDs); err != nil {
+		errorResponse(c, 400, "invalid_ids", err.Error())
+		return
+	}
+
+	var stopped int64
 	for _, id := range req.IDs {
 		var analysis models.Analysis
-		result := db.DB.Where("id = ? AND (status = ? OR status = ?)", id, models.Queued, models.Processing).First(&analysis)
-		if result.Error == nil {
-			if err := analysis.MarkAsCancelled(db.DB); err == nil {
+		if err := db.DB.Where("id = ? AND (status = ? OR status = ?)", id, models.Queued, models.Processing).First(&analysis).Error; err == nil {
+			if analysis.MarkAsCancelled(db.DB) == nil {
 				stopped++
 			}
 		}
@@ -189,47 +200,42 @@ func StopAnalyses(c *gin.Context) {
 	c.JSON(200, gin.H{"stopped": stopped})
 }
 
-// Rerun analyses by IDs (set status to queued, skip if already processing)
 func RerunAnalyses(c *gin.Context) {
-	var req struct {
-		IDs []string `json:"ids" binding:"required"`
-	}
+	var req IDsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": "invalid_request", "message": "We couldn't process your request. Please check your input and try again.", "details": err.Error()})
+		errorResponse(c, 400, "invalid_request", "Invalid request format", err.Error())
 		return
 	}
-	if len(req.IDs) == 0 {
-		c.JSON(400, gin.H{"error": "no_ids_provided", "message": "No analyses were selected. Please select at least one and try again."})
+
+	if err := validateUUIDs(req.IDs); err != nil {
+		errorResponse(c, 400, "invalid_ids", err.Error())
 		return
 	}
-	for _, id := range req.IDs {
-		if len(id) != 36 {
-			c.JSON(400, gin.H{"error": "invalid_id_format", "message": "We couldn't find one of the selected analyses. Please refresh and try again.", "id": id})
-			return
-		}
-	}
+
 	result := db.DB.Model(&models.Analysis{}).
 		Where("id IN ? AND status NOT IN (?, ?)", req.IDs, models.Processing, models.Queued).
 		Updates(map[string]interface{}{"status": models.Queued})
+
 	if result.Error != nil {
-		c.JSON(500, gin.H{"error": "db_rerun_failed", "message": "Sorry, we couldn't re-queue the selected analyses. Please try again later.", "details": result.Error.Error()})
+		errorResponse(c, 500, "db_rerun_failed", "Failed to rerun analyses", result.Error.Error())
 		return
 	}
+
 	c.JSON(200, gin.H{"rerun": result.RowsAffected})
 }
 
-// Get a single analysis by ID
 func GetSingleAnalysis(c *gin.Context) {
 	id := c.Param("id")
 	if len(id) != 36 {
-		c.JSON(400, gin.H{"error": "invalid_id_format", "message": "We couldn't find the analysis you requested. Please refresh and try again."})
+		errorResponse(c, 400, "invalid_id_format", "Invalid ID format")
 		return
 	}
+
 	var analysis models.Analysis
-	result := db.DB.First(&analysis, "id = ?", id)
-	if result.Error != nil {
-		c.JSON(404, gin.H{"error": "not_found", "message": "We couldn't find the analysis you requested."})
+	if err := db.DB.First(&analysis, "id = ?", id).Error; err != nil {
+		errorResponse(c, 404, "not_found", "Analysis not found")
 		return
 	}
+
 	c.JSON(200, analysis)
 }

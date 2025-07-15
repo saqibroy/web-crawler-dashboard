@@ -1,5 +1,4 @@
 // client/src/pages/Analysis.tsx
-import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSingleAnalysisQuery } from '../hooks/useAnalysesData';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -8,14 +7,13 @@ import EmptyState from '../components/common/EmptyState';
 import SeoHelmet from '../components/common/SeoHelmet';
 import { getErrorMessage } from '../utils/errorUtils';
 
-// New components for Analysis page
+// Analysis components
 import AnalysisHeader from '../components/Analysis/AnalysisHeader';
 import AnalysisKeyMetrics from '../components/Analysis/AnalysisKeyMetrics';
 import AnalysisLinksChart from '../components/Analysis/AnalysisLinksChart';
 import AnalysisHeadingsChart from '../components/Analysis/AnalysisHeadingsChart';
 import AnalysisDetailsCard from '../components/Analysis/AnalysisDetailsCard';
 import AnalysisBrokenLinks from '../components/Analysis/AnalysisBrokenLinks';
-import type { Analysis } from '../types';
 
 export default function Analysis() {
   const { id } = useParams();
@@ -30,23 +28,20 @@ export default function Analysis() {
   }
 
   if (error) {
-    return (
-      <div>
-        <ErrorAlert message={getErrorMessage(error)} onDismiss={() => {}} />
-      </div>
-    );
+    return <ErrorAlert message={getErrorMessage(error)} onDismiss={() => {}} />;
   }
 
   if (!analysis) {
     return (
-      <div>
-        <EmptyState title="No analysis data available." message="The requested analysis could not be loaded or does not exist." />
-      </div>
+      <EmptyState 
+        title="No analysis data available." 
+        message="The requested analysis could not be loaded or does not exist." 
+      />
     );
   }
 
-  // For cancelled analyses, show empty fields in the UI only if needed
-  const displayAnalysis = analysis.status === 'cancelled' ? {
+  // Reset data for cancelled analyses
+  const displayData = analysis.status === 'cancelled' ? {
     ...analysis,
     title: '',
     html_version: '',
@@ -61,24 +56,25 @@ export default function Analysis() {
   return (
     <>
       <SeoHelmet
-        title={analysis?.title || analysis?.url || 'Analysis Details'}
-        description={`Detailed web analysis for ${analysis?.url || 'a website'}. HTML version, links, headings, and more.`}
+        title={analysis.title || analysis.url || 'Analysis Details'}
+        description={`Detailed web analysis for ${analysis.url}. HTML version, links, headings, and more.`}
         canonicalUrl={`${window.location.origin}/analysis/${id}`}
       />
-      <div>
-        <AnalysisHeader analysis={displayAnalysis} />
-        <AnalysisKeyMetrics analysis={displayAnalysis} />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <AnalysisLinksChart
-            internalLinks={displayAnalysis.internal_links || 0}
-            externalLinks={displayAnalysis.external_links || 0}
-          />
-          <AnalysisHeadingsChart headings={displayAnalysis.headings} />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <AnalysisDetailsCard analysis={displayAnalysis} />
-          <AnalysisBrokenLinks brokenLinks={displayAnalysis.broken_links} />
-        </div>
+      
+      <AnalysisHeader analysis={displayData} />
+      <AnalysisKeyMetrics analysis={displayData} />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <AnalysisLinksChart
+          internalLinks={displayData.internal_links || 0}
+          externalLinks={displayData.external_links || 0}
+        />
+        <AnalysisHeadingsChart headings={displayData.headings} />
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <AnalysisDetailsCard analysis={displayData} />
+        <AnalysisBrokenLinks brokenLinks={displayData.broken_links} />
       </div>
     </>
   );

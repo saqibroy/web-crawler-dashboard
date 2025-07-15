@@ -1,4 +1,3 @@
-// client/src/components/AnalysisTable/TableRow.tsx
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import type { Analysis } from '../../../types';
@@ -8,14 +7,17 @@ interface DashboardTableRowProps {
   analysis: Analysis;
   isSelected: boolean;
   onToggleSelection: (id: string) => void;
-  index: number; // For alternating row colors
+  index: number;
 }
 
+const DISABLED_STATUSES = ['cancelled', 'queued', 'processing', 'failed'];
+
 export default function DashboardTableRow({ analysis, isSelected, onToggleSelection, index }: DashboardTableRowProps) {
+  const isDisabled = DISABLED_STATUSES.includes(analysis.status);
   const rowClasses = `hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`;
 
   return (
-    <tr key={analysis.id} className={rowClasses}>
+    <tr className={rowClasses}>
       <td className="relative w-12 px-6 sm:w-16 sm:px-8">
         <input
           type="checkbox"
@@ -58,12 +60,12 @@ export default function DashboardTableRow({ analysis, isSelected, onToggleSelect
         <Link
           to={`/analysis/${analysis.id}`}
           className={`inline-flex items-center transition-colors ${
-            analysis.status === 'cancelled' || analysis.status === 'queued' || analysis.status === 'processing' || analysis.status === 'failed'
+            isDisabled
               ? 'text-gray-400 cursor-not-allowed pointer-events-none'
               : 'text-blue-600 hover:text-blue-900'
           }`}
           onClick={(e) => {
-            if (analysis.status === 'cancelled' || analysis.status === 'queued' || analysis.status === 'processing' || analysis.status === 'failed') {
+            if (isDisabled) {
               e.preventDefault();
             }
           }}
