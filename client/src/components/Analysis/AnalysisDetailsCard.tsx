@@ -1,6 +1,6 @@
 // client/src/components/Analysis/AnalysisDetailsCard.tsx
 import type { Analysis } from '../../types'
-import { getStatusColorClasses } from '../../utils/analysisUtils';
+import { getStatusColorClasses } from '../../utils'
 
 interface AnalysisDetailsCardProps {
   analysis: Analysis

@@ -5,7 +5,7 @@ import LoadingSpinner from '../components/common/LoadingSpinner'
 import ErrorAlert from '../components/common/ErrorAlert'
 import EmptyState from '../components/common/EmptyState'
 import SeoHelmet from '../components/common/SeoHelmet'
-import { getErrorMessage } from '../utils/errorUtils'
+import { getErrorMessage } from '../utils'
 
 // Analysis components
 import AnalysisHeader from '../components/Analysis/AnalysisHeader'

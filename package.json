@@ -1,0 +1,29 @@
+{
+    "name": "web-crawler-dashboard-root",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Orchestrates the full-stack web crawler dashboard for easy local development.",
+    "scripts": {
+      "install-all": "npm install && cd client && npm install",
+      "start-db": "docker-compose -f database/docker-compose.yml up",
+      "start-server": "cd server && go run main.go",
+      "start-client": "cd client && npm run build && npm run preview",
+      "dev": "concurrently \"npm run start-db\" \"npm run start-server\" \"npm run start-client\"",
+      "test": "npm run test:client",
+      "test:client": "cd client && npm test",
+      "clean:db": "docker-compose -f database/docker-compose.yml down -v"
+    },
+    "keywords": [
+      "web-crawler",
+      "full-stack",
+      "react",
+      "go",
+      "mysql",
+      "docker-compose"
+    ],
+    "author": "Saqib Sohail",
+    "license": "MIT",
+    "devDependencies": {
+      "concurrently": "^8.2.2"
+    }
+  }

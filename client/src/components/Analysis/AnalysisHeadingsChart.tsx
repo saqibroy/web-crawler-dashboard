@@ -1,5 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { CHART_COLORS } from '../../utils/analysisUtils'
+import { CHART_COLORS } from '../../utils'
 import EmptyState from '../common/EmptyState'
 import { Heading } from 'lucide-react'
 

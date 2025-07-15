@@ -2,7 +2,7 @@ import type { ChangeEvent } from 'react'
 import { Search, Trash2, RotateCw, XCircle } from 'lucide-react'
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import SpinningIcon from '../../components/common/SpinningIcon';
+import SpinningIcon from '../../components/common/SpinningIcon'
 
 interface DashboardControlsProps {
   selectedIdsCount: number

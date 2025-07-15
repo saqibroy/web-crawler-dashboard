@@ -1,12 +1,18 @@
 import { Link as LinkIcon, ExternalLink, AlertCircle, FileText } from 'lucide-react'
 import type { Analysis } from '../../types'
-import BaseCard from '../common/BaseCard';
+import BaseCard from '../common/BaseCard'
 
 interface AnalysisKeyMetricsProps {
   analysis: Analysis
 }
 
-const MetricCard = ({ icon, bgColor, textColor, title, value }: {
+const MetricCard = ({
+  icon,
+  bgColor,
+  textColor,
+  title,
+  value,
+}: {
   icon: React.ElementType
   bgColor: string
   textColor: string
@@ -20,7 +26,7 @@ const MetricCard = ({ icon, bgColor, textColor, title, value }: {
     iconBgColor={bgColor}
     iconTextColor={textColor}
   />
-);
+)
 
 export default function AnalysisKeyMetrics({ analysis }: AnalysisKeyMetricsProps) {
   const brokenLinksCount = Object.keys(analysis.broken_links || {}).length

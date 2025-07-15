@@ -1,6 +1,6 @@
 // client/src/components/Analysis/AnalysisLinksChart.tsx
 import { PieChart, Pie, Tooltip, ResponsiveContainer, Cell, Legend } from 'recharts'
-import { CHART_COLORS } from '../../utils/analysisUtils'
+import { CHART_COLORS } from '../../utils'
 import EmptyState from '../common/EmptyState'
 
 interface AnalysisLinksChartProps {

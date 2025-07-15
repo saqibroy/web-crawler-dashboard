@@ -2,7 +2,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import type { Analysis } from '../../types'
-import { getStatusColorClasses } from '../../utils/analysisUtils';
+import { getStatusColorClasses } from '../../utils'
 
 interface AnalysisHeaderProps {
   analysis: Analysis

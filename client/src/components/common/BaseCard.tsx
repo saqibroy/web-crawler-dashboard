@@ -1,14 +1,14 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from 'react'
 
 interface BaseCardProps {
-  icon: React.ElementType;
-  title: string;
-  value: string | number;
-  bgColor?: string;
-  iconBgColor?: string;
-  iconTextColor?: string;
-  onClick?: () => void;
-  className?: string;
+  icon: React.ElementType
+  title: string
+  value: string | number
+  bgColor?: string
+  iconBgColor?: string
+  iconTextColor?: string
+  onClick?: () => void
+  className?: string
 }
 
 const BaseCard = ({
@@ -26,7 +26,9 @@ const BaseCard = ({
     onClick={onClick}
   >
     <div className="flex items-center">
-      <div className={`w-8 h-8 ${iconBgColor} rounded-full flex items-center justify-center flex-shrink-0`}>
+      <div
+        className={`w-8 h-8 ${iconBgColor} rounded-full flex items-center justify-center flex-shrink-0`}
+      >
         <Icon className={`w-5 h-5 ${iconTextColor}`} />
       </div>
       <div className="ml-5 flex-1">
@@ -35,6 +37,6 @@ const BaseCard = ({
       </div>
     </div>
   </div>
-);
+)
 
-export default BaseCard; 
+export default BaseCard

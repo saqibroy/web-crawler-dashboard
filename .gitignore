@@ -3,6 +3,8 @@
 .env
 *.log
 
+node_modules
+
 # Frontend specific
 client/node_modules
 client/dist

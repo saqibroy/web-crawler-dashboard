@@ -1,4 +1,4 @@
-import { getStatusDisplay } from '../../utils/analysisUtils'
+import { getStatusDisplay } from '../../utils'
 import type { AnalysisStatus } from '../../types'
 
 const StatusBadge = ({ status }: { status: AnalysisStatus }) => {

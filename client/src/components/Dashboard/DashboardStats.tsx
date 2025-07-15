@@ -1,9 +1,9 @@
 // client/src/components/Dashboard/DashboardStats.tsx
 import { BarChart2, CheckCircle, Hourglass, XOctagon, XCircle } from 'lucide-react'
 import type { DashboardStatsData } from '../../types'
-import { getStatusColorClasses } from '../../utils/analysisUtils';
-import type { AnalysisStatus } from '../../types';
-import BaseCard from '../common/BaseCard';
+import { getStatusColorClasses } from '../../utils'
+import type { AnalysisStatus } from '../../types'
+import BaseCard from '../common/BaseCard'
 
 interface StatCardProps {
   icon: React.ElementType
@@ -15,21 +15,23 @@ interface StatCardProps {
 }
 
 const StatCard = ({ icon, title, value, status, isActive, onClick }: StatCardProps) => {
-  let bgColor = 'bg-white';
-  let textColor = 'text-blue-600';
-  let iconBgColor = 'bg-gray-100';
-  let iconTextColor = 'text-blue-600';
+  let bgColor = 'bg-white'
+  let textColor = 'text-blue-600'
+  let iconBgColor = 'bg-gray-100'
+  let iconTextColor = 'text-blue-600'
   if (status) {
-    const { bgColor: statusBgColor, textColor: statusTextColor } = getStatusColorClasses(status as AnalysisStatus);
-    bgColor = isActive ? statusBgColor : 'bg-white';
-    textColor = statusTextColor;
-    iconBgColor = statusBgColor;
-    iconTextColor = statusTextColor;
+    const { bgColor: statusBgColor, textColor: statusTextColor } = getStatusColorClasses(
+      status as AnalysisStatus,
+    )
+    bgColor = isActive ? statusBgColor : 'bg-white'
+    textColor = statusTextColor
+    iconBgColor = statusBgColor
+    iconTextColor = statusTextColor
   } else if (isActive) {
-    bgColor = 'bg-blue-100';
-    textColor = 'text-blue-800';
-    iconBgColor = 'bg-blue-100';
-    iconTextColor = 'text-blue-800';
+    bgColor = 'bg-blue-100'
+    textColor = 'text-blue-800'
+    iconBgColor = 'bg-blue-100'
+    iconTextColor = 'text-blue-800'
   }
   return (
     <BaseCard
@@ -41,8 +43,8 @@ const StatCard = ({ icon, title, value, status, isActive, onClick }: StatCardPro
       iconTextColor={iconTextColor}
       onClick={onClick}
     />
-  );
-};
+  )
+}
 
 interface DashboardStatsProps {
   stats: DashboardStatsData

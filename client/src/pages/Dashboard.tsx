@@ -19,7 +19,7 @@ import DashboardPagination from '../components/Dashboard/DashboardPagination'
 import SeoHelmet from '../components/common/SeoHelmet'
 import toast from 'react-hot-toast'
 import ErrorAlert from '../components/common/ErrorAlert'
-import { getErrorMessage, isNetworkError } from '../utils/errorUtils'
+import { getErrorMessage, isNetworkError } from '../utils'
 
 export default function Dashboard() {
   const [page, setPage] = useState(1)

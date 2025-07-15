@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link2, Search } from 'lucide-react'
-import SpinningIcon from '../common/SpinningIcon';
+import SpinningIcon from '../common/SpinningIcon'
 
 interface DashboardFormProps {
   onSubmit: (url: string) => void

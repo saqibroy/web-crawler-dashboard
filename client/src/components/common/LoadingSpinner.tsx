@@ -1,6 +1,6 @@
 // client/src/components/common/LoadingSpinner.tsx
 import type { ReactNode } from 'react'
-import SpinningIcon from './SpinningIcon';
+import SpinningIcon from './SpinningIcon'
 
 interface LoadingSpinnerProps {
   message?: string
