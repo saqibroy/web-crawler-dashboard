@@ -1,4 +1,3 @@
-// client/src/pages/Analysis.tsx
 import { useParams } from 'react-router-dom'
 import { useSingleAnalysisQuery } from '../hooks/useAnalysesData'
 import LoadingSpinner from '../components/common/LoadingSpinner'
@@ -7,13 +6,24 @@ import EmptyState from '../components/common/EmptyState'
 import SeoHelmet from '../components/common/SeoHelmet'
 import { getErrorMessage } from '../utils'
 
-// Analysis components
 import AnalysisHeader from '../components/Analysis/AnalysisHeader'
-import AnalysisKeyMetrics from '../components/Analysis/AnalysisKeyMetrics'
 import AnalysisLinksChart from '../components/Analysis/AnalysisLinksChart'
 import AnalysisHeadingsChart from '../components/Analysis/AnalysisHeadingsChart'
 import AnalysisDetailsCard from '../components/Analysis/AnalysisDetailsCard'
 import AnalysisBrokenLinks from '../components/Analysis/AnalysisBrokenLinks'
+import BackToDashboard from '../components/common/BackToDashboard'
+
+const getCancelledAnalysisData = (analysis: any) => ({
+  ...analysis,
+  title: '',
+  html_version: '',
+  internal_links: 0,
+  external_links: 0,
+  broken_links: null,
+  headings: null,
+  has_login_form: false,
+  completed_at: null,
+})
 
 export default function Analysis() {
   const { id } = useParams()
@@ -21,40 +31,38 @@ export default function Analysis() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center">
-        <LoadingSpinner message="Loading analysis details..." size="lg" />
-      </div>
+      <>
+        <BackToDashboard />
+        <div className="flex items-center justify-center">
+          <LoadingSpinner message="Loading analysis details..." size="lg" />
+        </div>
+      </>
     )
   }
 
   if (error) {
-    return <ErrorAlert message={getErrorMessage(error)} onDismiss={() => {}} />
+    return (
+      <>
+        <BackToDashboard />
+        <ErrorAlert message={getErrorMessage(error)} onDismiss={() => {}} />
+      </>
+    )
   }
 
   if (!analysis) {
     return (
-      <EmptyState
-        title="No analysis data available."
-        message="The requested analysis could not be loaded or does not exist."
-      />
+      <>
+        <BackToDashboard />
+        <EmptyState
+          title="No analysis data available."
+          message="The requested analysis could not be loaded or does not exist."
+        />
+      </>
     )
   }
 
-  // Reset data for cancelled analyses
   const displayData =
-    analysis.status === 'cancelled'
-      ? {
-          ...analysis,
-          title: '',
-          html_version: '',
-          internal_links: 0,
-          external_links: 0,
-          broken_links: null,
-          headings: null,
-          has_login_form: false,
-          completed_at: null,
-        }
-      : analysis
+    analysis.status === 'cancelled' ? getCancelledAnalysisData(analysis) : analysis
 
   return (
     <>
@@ -65,7 +73,6 @@ export default function Analysis() {
       />
 
       <AnalysisHeader analysis={displayData} />
-      <AnalysisKeyMetrics analysis={displayData} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <AnalysisLinksChart

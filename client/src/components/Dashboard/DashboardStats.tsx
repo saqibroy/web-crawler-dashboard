@@ -1,8 +1,6 @@
-// client/src/components/Dashboard/DashboardStats.tsx
 import { BarChart2, CheckCircle, Hourglass, XOctagon, XCircle } from 'lucide-react'
-import type { DashboardStatsData } from '../../types'
+import type { DashboardStatsData, AnalysisStatus } from '../../types'
 import { getStatusColorClasses } from '../../utils'
-import type { AnalysisStatus } from '../../types'
 import BaseCard from '../common/BaseCard'
 
 interface StatCardProps {
@@ -15,61 +13,73 @@ interface StatCardProps {
 }
 
 const StatCard = ({ icon, title, value, status, isActive, onClick }: StatCardProps) => {
-  let bgColor = 'bg-white'
-  let textColor = 'text-blue-600'
-  let iconBgColor = 'bg-gray-100'
-  let iconTextColor = 'text-blue-600'
-  if (status) {
-    const { bgColor: statusBgColor, textColor: statusTextColor } = getStatusColorClasses(
-      status as AnalysisStatus,
-    )
-    bgColor = isActive ? statusBgColor : 'bg-white'
-    textColor = statusTextColor
-    iconBgColor = statusBgColor
-    iconTextColor = statusTextColor
-  } else if (isActive) {
-    bgColor = 'bg-blue-100'
-    textColor = 'text-blue-800'
-    iconBgColor = 'bg-blue-100'
-    iconTextColor = 'text-blue-800'
+  let colors = {
+    bg: 'bg-white',
+    iconBg: 'bg-gray-100',
+    iconText: 'text-blue-600',
+    hover: 'hover:bg-blue-50',
   }
+
+  if (status) {
+    const { bgColor, textColor } = getStatusColorClasses(status as AnalysisStatus)
+    const hoverMap: Record<string, string> = {
+      'bg-green-100': 'hover:bg-green-50',
+      'bg-red-100': 'hover:bg-red-50',
+      'bg-yellow-100': 'hover:bg-yellow-50',
+      'bg-gray-100': 'hover:bg-gray-50',
+      'bg-orange-100': 'hover:bg-orange-50',
+    }
+
+    colors = {
+      bg: isActive ? bgColor : 'bg-white',
+      iconBg: isActive ? 'bg-white' : bgColor,
+      iconText: textColor,
+      hover: hoverMap[bgColor] || 'hover:bg-gray-50',
+    }
+  } else if (isActive) {
+    colors = {
+      bg: 'bg-blue-100',
+      iconBg: 'bg-white',
+      iconText: 'text-blue-800',
+      hover: 'hover:bg-blue-100',
+    }
+  }
+
   return (
     <BaseCard
       icon={icon}
       title={title}
       value={value}
-      bgColor={bgColor}
-      iconBgColor={iconBgColor}
-      iconTextColor={iconTextColor}
+      bgColor={colors.bg}
+      iconBgColor={colors.iconBg}
+      iconTextColor={colors.iconText}
+      hoverBgColor={colors.hover}
       onClick={onClick}
     />
   )
 }
 
-interface DashboardStatsProps {
-  stats: DashboardStatsData
-  activeStatus?: string
-  onStatusClick?: (status: string) => void
-  onTotalClick?: () => void
-}
+const STATUS_CONFIG = [
+  { key: 'completed', title: 'Completed', icon: CheckCircle },
+  { key: 'processing', title: 'Processing', icon: Hourglass },
+  { key: 'queued', title: 'Queued', icon: Hourglass },
+  { key: 'failed', title: 'Failed', icon: XOctagon },
+  { key: 'cancelled', title: 'Cancelled', icon: XCircle },
+] as const
 
 export default function DashboardStats({
   stats,
   activeStatus,
   onStatusClick,
   onTotalClick,
-}: DashboardStatsProps) {
-  const statusList = [
-    { key: 'completed', title: 'Completed', icon: CheckCircle },
-    { key: 'processing', title: 'Processing', icon: Hourglass },
-    { key: 'queued', title: 'Queued', icon: Hourglass },
-    { key: 'failed', title: 'Failed', icon: XOctagon },
-    { key: 'cancelled', title: 'Cancelled', icon: XCircle },
-  ]
-
+}: {
+  stats: DashboardStatsData
+  activeStatus?: AnalysisStatus
+  onStatusClick?: (status: AnalysisStatus) => void
+  onTotalClick?: () => void
+}) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
-      {/* Total card */}
       <StatCard
         icon={BarChart2}
         title="Total"
@@ -77,9 +87,7 @@ export default function DashboardStats({
         isActive={!activeStatus}
         onClick={onTotalClick}
       />
-
-      {/* Status filter cards */}
-      {statusList.map(({ key, title, icon }) => (
+      {STATUS_CONFIG.map(({ key, title, icon }) => (
         <StatCard
           key={key}
           icon={icon}
@@ -87,7 +95,7 @@ export default function DashboardStats({
           value={stats[key as keyof DashboardStatsData]}
           status={key}
           isActive={activeStatus === key}
-          onClick={() => onStatusClick?.(key)}
+          onClick={() => onStatusClick?.(key as AnalysisStatus)}
         />
       ))}
     </div>

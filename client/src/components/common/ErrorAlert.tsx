@@ -1,4 +1,3 @@
-// client/src/components/common/ErrorAlert.tsx
 import { XCircle } from 'lucide-react'
 
 interface ErrorAlertProps {

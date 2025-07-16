@@ -1,10 +1,26 @@
-// client/src/components/Analysis/AnalysisDetailsCard.tsx
 import type { Analysis } from '../../types'
-import { getStatusColorClasses } from '../../utils'
+import StatusBadge from '../common/StatusBadge'
 
 interface AnalysisDetailsCardProps {
   analysis: Analysis
 }
+
+const LoginFormBadge = ({ hasLoginForm }: { hasLoginForm: boolean }) => (
+  <span
+    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+      hasLoginForm ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+    }`}
+  >
+    {hasLoginForm ? 'Detected' : 'Not Detected'}
+  </span>
+)
+
+const DetailRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div className="flex justify-between">
+    <dt className="text-sm font-medium text-gray-500">{label}</dt>
+    <dd className="text-sm text-gray-900">{children}</dd>
+  </div>
+)
 
 export default function AnalysisDetailsCard({ analysis }: AnalysisDetailsCardProps) {
   return (
@@ -14,47 +30,22 @@ export default function AnalysisDetailsCard({ analysis }: AnalysisDetailsCardPro
       </div>
       <div className="p-6">
         <dl className="space-y-4">
-          <div className="flex justify-between">
-            <dt className="text-sm font-medium text-gray-500">Status</dt>
-            <dd>
-              <span
-                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColorClasses(analysis.status).detailBgColor} ${getStatusColorClasses(analysis.status).detailTextColor}`}
-              >
-                {analysis.status}
-              </span>
-            </dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-sm font-medium text-gray-500">HTML Version</dt>
-            <dd className="text-sm text-gray-900">{analysis.html_version || 'N/A'}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-sm font-medium text-gray-500">Login Form</dt>
-            <dd className="text-sm text-gray-900">
-              <span
-                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  analysis.has_login_form
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-gray-100 text-gray-800'
-                }`}
-              >
-                {analysis.has_login_form ? 'Detected' : 'Not Detected'}
-              </span>
-            </dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-sm font-medium text-gray-500">Created</dt>
-            <dd className="text-sm text-gray-900">
-              {new Date(analysis.created_at).toLocaleString()}
-            </dd>
-          </div>
+          <DetailRow label="Status">
+            <StatusBadge status={analysis.status} />
+          </DetailRow>
+
+          <DetailRow label="HTML Version">{analysis.html_version || 'N/A'}</DetailRow>
+
+          <DetailRow label="Login Form">
+            <LoginFormBadge hasLoginForm={analysis.has_login_form} />
+          </DetailRow>
+
+          <DetailRow label="Created">{new Date(analysis.created_at).toLocaleString()}</DetailRow>
+
           {analysis.completed_at && (
-            <div className="flex justify-between">
-              <dt className="text-sm font-medium text-gray-500">Completed</dt>
-              <dd className="text-sm text-gray-900">
-                {new Date(analysis.completed_at).toLocaleString()}
-              </dd>
-            </div>
+            <DetailRow label="Completed">
+              {new Date(analysis.completed_at).toLocaleString()}
+            </DetailRow>
           )}
         </dl>
       </div>

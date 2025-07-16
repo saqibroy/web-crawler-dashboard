@@ -4,107 +4,54 @@ import type { SortKey, StatusDisplay, Analysis, AnalysisStatus } from './types'
 import SpinningIcon from './components/common/SpinningIcon'
 import { AxiosError } from 'axios'
 
+const STATUS_COLORS = {
+  completed: { bg: 'bg-green-100', text: 'text-green-800' },
+  failed: { bg: 'bg-red-100', text: 'text-red-800' },
+  processing: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
+  queued: { bg: 'bg-gray-100', text: 'text-gray-800' },
+  cancelled: { bg: 'bg-orange-100', text: 'text-orange-800' },
+} as const
+
 export const getStatusColorClasses = (status: AnalysisStatus) => {
-  switch (status) {
-    case 'completed':
-      return {
-        bgColor: 'bg-green-100',
-        textColor: 'text-green-800',
-        detailBgColor: 'bg-green-100',
-        detailTextColor: 'text-green-800',
-      }
-    case 'failed':
-      return {
-        bgColor: 'bg-red-100',
-        textColor: 'text-red-800',
-        detailBgColor: 'bg-red-100',
-        detailTextColor: 'text-red-800',
-      }
-    case 'processing':
-      return {
-        bgColor: 'bg-yellow-100',
-        textColor: 'text-yellow-800',
-        detailBgColor: 'bg-blue-100',
-        detailTextColor: 'text-blue-800',
-      }
-    case 'queued':
-      return {
-        bgColor: 'bg-gray-100',
-        textColor: 'text-gray-800',
-        detailBgColor: 'bg-yellow-100',
-        detailTextColor: 'text-yellow-800',
-      }
-    case 'cancelled':
-      return {
-        bgColor: 'bg-orange-100',
-        textColor: 'text-orange-800',
-        detailBgColor: 'bg-gray-200',
-        detailTextColor: 'text-gray-700',
-      }
-    default:
-      return {
-        bgColor: 'bg-gray-100',
-        textColor: 'text-gray-800',
-        detailBgColor: 'bg-gray-100',
-        detailTextColor: 'text-gray-800',
-      }
+  const colors = STATUS_COLORS[status] || STATUS_COLORS.queued
+  return {
+    bgColor: colors.bg,
+    textColor: colors.text,
+    detailBgColor: colors.bg,
+    detailTextColor: colors.text,
   }
 }
 
 export const getStatusDisplay = (status: AnalysisStatus): StatusDisplay => {
   const baseClasses = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium'
   const { bgColor, textColor } = getStatusColorClasses(status)
-  switch (status) {
-    case 'completed':
-      return {
-        icon: React.createElement(CheckCircle, { className: 'mr-1 h-3 w-3' }),
-        className: `${baseClasses} ${bgColor} ${textColor}`,
-        text: 'Completed',
-      }
-    case 'failed':
-      return {
-        icon: React.createElement(XCircle, { className: 'mr-1 h-3 w-3' }),
-        className: `${baseClasses} ${bgColor} ${textColor}`,
-        text: 'Failed',
-      }
-    case 'processing':
-      return {
-        icon: React.createElement(SpinningIcon, {
-          sizeClasses: 'h-3 w-3',
-          className: `mr-1 ${textColor}`,
-        }),
-        className: `${baseClasses} ${bgColor} ${textColor}`,
-        text: 'Processing',
-      }
-    case 'queued':
-      return {
-        icon: React.createElement(Hourglass, { className: 'mr-1 h-3 w-3' }),
-        className: `${baseClasses} ${bgColor} ${textColor}`,
-        text: 'Queued',
-      }
-    case 'cancelled':
-      return {
-        icon: React.createElement(XCircle, { className: 'mr-1 h-3 w-3' }),
-        className: `${baseClasses} ${bgColor} ${textColor}`,
-        text: 'Cancelled',
-      }
-    default:
-      return {
-        icon: React.createElement(Info, { className: 'mr-1 h-3 w-3' }),
-        className: `${baseClasses} ${bgColor} ${textColor}`,
-        text: String(status).charAt(0).toUpperCase() + String(status).slice(1),
-      }
+  const className = `${baseClasses} ${bgColor} ${textColor}`
+
+  const statusConfig = {
+    completed: { icon: CheckCircle, text: 'Completed' },
+    failed: { icon: XCircle, text: 'Failed' },
+    processing: { icon: SpinningIcon, text: 'Processing' },
+    queued: { icon: Hourglass, text: 'Queued' },
+    cancelled: { icon: XCircle, text: 'Cancelled' },
+  }
+
+  const config = statusConfig[status] || {
+    icon: Info,
+    text: status.charAt(0).toUpperCase() + status.slice(1),
+  }
+
+  const iconProps =
+    status === 'processing'
+      ? { sizeClasses: 'h-3 w-3', className: `mr-1 ${textColor}` }
+      : { className: 'mr-1 h-3 w-3' }
+
+  return {
+    icon: React.createElement(config.icon, iconProps),
+    className,
+    text: config.text,
   }
 }
 
-/**
- * Compares two analysis objects based on a given sort key and direction.
- * @param a The first analysis object.
- * @param b The second analysis object.
- * @param key The key to sort by.
- * @param direction The sort direction ('asc' or 'desc').
- * @returns A number indicating the sort order (-1, 0, or 1).
- */
 export const sortAnalyses = (
   a: Analysis,
   b: Analysis,
@@ -114,9 +61,8 @@ export const sortAnalyses = (
   const aValue = a[key]
   const bValue = b[key]
 
-  // Handle null/undefined values by pushing them to the end (or beginning, depending on asc/desc)
-  if (aValue === undefined || aValue === null) return direction === 'asc' ? 1 : -1
-  if (bValue === undefined || bValue === null) return direction === 'asc' ? -1 : 1
+  if (aValue == null) return direction === 'asc' ? 1 : -1
+  if (bValue == null) return direction === 'asc' ? -1 : 1
 
   if (typeof aValue === 'string' && typeof bValue === 'string') {
     return direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue)
@@ -124,37 +70,23 @@ export const sortAnalyses = (
   if (typeof aValue === 'number' && typeof bValue === 'number') {
     return direction === 'asc' ? aValue - bValue : bValue - aValue
   }
-  return 0 // Should not happen with defined SortKey, but for safety
+  return 0
 }
 
-/**
- * Array of colors for charts.
- */
 export const CHART_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
-
 export const DISABLED_STATUSES = ['cancelled', 'queued', 'processing', 'failed']
 
-export function getErrorMessage(error: unknown): string {
+export const getErrorMessage = (error: unknown): string => {
   if (error && typeof error === 'object' && 'response' in error) {
     const axiosError = error as AxiosError<any>
     return (
-      axiosError.response?.data?.message ||
-      ('message' in axiosError ? (axiosError as { message: string }).message : undefined) ||
-      'An unexpected error occurred.'
+      axiosError.response?.data?.message || axiosError.message || 'An unexpected error occurred.'
     )
   }
-  if (error instanceof Error) {
-    return error.message
-  }
+  if (error instanceof Error) return error.message
   return 'An unexpected error occurred.'
 }
 
-export function isNetworkError(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'isAxiosError' in error &&
-    (error as AxiosError).isAxiosError === true &&
-    !(error as AxiosError).response
-  )
+export const isNetworkError = (error: unknown): boolean => {
+  return error instanceof AxiosError && error.isAxiosError && !error.response
 }

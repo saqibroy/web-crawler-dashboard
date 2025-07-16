@@ -1,4 +1,3 @@
-// client/src/pages/Dashboard.tsx (Simplified Error Handling)
 import { useState, useEffect } from 'react'
 import type { ChangeEvent } from 'react'
 import {
@@ -22,24 +21,25 @@ import ErrorAlert from '../components/common/ErrorAlert'
 import { getErrorMessage, isNetworkError } from '../utils'
 
 export default function Dashboard() {
+  // State management
   const [page, setPage] = useState(1)
-  const [limit] = useState(10)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [blockingError, setBlockingError] = useState<string | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const debouncedSearchTerm = useDebounce(searchTerm, 500)
   const [sortConfig, setSortConfig] = useState<{
     key: SortKey
     direction: 'asc' | 'desc'
   } | null>(null)
-  const [statusFilter, setStatusFilter] = useState<AnalysisStatus | undefined>(undefined)
+  const [statusFilter, setStatusFilter] = useState<AnalysisStatus | undefined>()
   const [unfilteredTotal, setUnfilteredTotal] = useState<number | null>(null)
 
-  // Query
+  const debouncedSearchTerm = useDebounce(searchTerm, 500)
+  const limit = 10
+
+  // Data fetching
   const {
     data,
-    isLoading: isInitialLoading,
+    isLoading,
     error: analysesError,
   } = useAnalysesQuery({
     page,
@@ -59,36 +59,30 @@ export default function Dashboard() {
   const stopAnalysesMutation = useStopAnalysesMutation()
   const rerunAnalysesMutation = useRerunAnalysesMutation()
 
-  // Simplified error handling
+  // Error handling
+  const [blockingError, setBlockingError] = useState<string | null>(null)
+
   useEffect(() => {
-    // Only show blocking error for query errors (network/API issues)
-    if (analysesError && isNetworkError(analysesError)) {
-      setBlockingError(getErrorMessage(analysesError))
-    } else {
-      setBlockingError(null)
-    }
+    setBlockingError(
+      analysesError && isNetworkError(analysesError) ? getErrorMessage(analysesError) : null,
+    )
   }, [analysesError])
 
-  // Helper function to show mutation error toasts
-  const showMutationError = (error: unknown) => {
-    toast.error(getErrorMessage(error))
-  }
-
-  // Check if selected analyses can be stopped
-  const visibleSelectedAnalyses = analyses.filter((a) => selectedIds.includes(a.id))
-  const canStopSelected =
-    selectedIds.length > 0 &&
-    visibleSelectedAnalyses.length === selectedIds.length &&
-    visibleSelectedAnalyses.every((a) => a.status === 'queued' || a.status === 'processing')
-
-  // Dashboard stats
-  const statusCounts = data?.status_counts || {}
+  // Track unfiltered total for stats
   useEffect(() => {
     if (!statusFilter && typeof data?.total_count === 'number') {
       setUnfilteredTotal(data.total_count)
     }
   }, [statusFilter, data?.total_count])
 
+  // Computed values
+  const visibleSelectedAnalyses = analyses.filter((a) => selectedIds.includes(a.id))
+  const canStopSelected =
+    selectedIds.length > 0 &&
+    visibleSelectedAnalyses.length === selectedIds.length &&
+    visibleSelectedAnalyses.every((a) => a.status === 'queued' || a.status === 'processing')
+
+  const statusCounts = data?.status_counts || {}
   const stats = {
     total: unfilteredTotal ?? totalAnalyses,
     completed: statusCounts.completed || 0,
@@ -98,58 +92,72 @@ export default function Dashboard() {
     cancelled: statusCounts.cancelled || 0,
   }
 
+  const totalPages = Math.ceil(totalAnalyses / limit)
+  const isAnyMutationPending = [
+    addUrlMutation,
+    deleteAnalysesMutation,
+    stopAnalysesMutation,
+    rerunAnalysesMutation,
+  ].some((m) => m.isPending)
+
+  const showFullTableLoading = isLoading && analyses.length === 0
+  const disableControls = isAnyMutationPending || isLoading
+
   // Event handlers
-  const handleDeleteSelected = () => {
-    if (selectedIds.length > 0) {
-      setShowDeleteModal(true)
-    }
-  }
+  const showMutationError = (error: unknown) => toast.error(getErrorMessage(error))
 
-  const confirmDelete = () => {
-    if (selectedIds.length > 0) {
-      deleteAnalysesMutation.mutate(selectedIds, {
-        onSuccess: () => {
-          toast.success(`Successfully deleted ${selectedIds.length} analysis(es)`)
-          setSelectedIds([])
-          setShowDeleteModal(false)
-        },
-        onError: showMutationError,
-      })
-    }
-  }
-
-  const handleStopSelected = () => {
-    if (selectedIds.length > 0) {
-      stopAnalysesMutation.mutate(selectedIds, {
-        onSuccess: () => {
-          toast.success('Selected analyses stopped.')
-          setSelectedIds([])
-        },
-        onError: showMutationError,
-      })
-    }
-  }
-
-  const handleRerunSelected = () => {
-    if (selectedIds.length > 0) {
-      rerunAnalysesMutation.mutate(selectedIds, {
-        onSuccess: () => {
-          toast.success('Selected analyses re-queued for processing.')
-          setSelectedIds([])
-          setPage(1)
-          setStatusFilter(undefined)
-        },
-        onError: showMutationError,
-      })
-    }
+  const resetFiltersAndPage = () => {
+    setPage(1)
+    setStatusFilter(undefined)
   }
 
   const handleAddUrl = (url: string) => {
     addUrlMutation.mutate(url.trim(), {
       onSuccess: () => {
         toast.success('URL added successfully!')
-        setPage(1)
-        setStatusFilter(undefined)
+        resetFiltersAndPage()
+      },
+      onError: showMutationError,
+    })
+  }
+
+  const handleDeleteSelected = () => {
+    if (selectedIds.length > 0) setShowDeleteModal(true)
+  }
+
+  const confirmDelete = () => {
+    if (selectedIds.length === 0) return
+
+    deleteAnalysesMutation.mutate(selectedIds, {
+      onSuccess: () => {
+        toast.success(`Successfully deleted ${selectedIds.length} analysis(es)`)
+        setSelectedIds([])
+        setShowDeleteModal(false)
+      },
+      onError: showMutationError,
+    })
+  }
+
+  const handleStopSelected = () => {
+    if (selectedIds.length === 0) return
+
+    stopAnalysesMutation.mutate(selectedIds, {
+      onSuccess: () => {
+        toast.success('Selected analyses stopped.')
+        setSelectedIds([])
+      },
+      onError: showMutationError,
+    })
+  }
+
+  const handleRerunSelected = () => {
+    if (selectedIds.length === 0) return
+
+    rerunAnalysesMutation.mutate(selectedIds, {
+      onSuccess: () => {
+        toast.success('Selected analyses re-queued for processing.')
+        setSelectedIds([])
+        resetFiltersAndPage()
       },
       onError: showMutationError,
     })
@@ -160,28 +168,15 @@ export default function Dashboard() {
     setPage(1)
   }
 
-  const handleSelect = (ids: string[]) => {
-    setSelectedIds(ids)
-  }
-
   const handleSort = (key: SortKey) => {
-    let direction: 'asc' | 'desc' = 'asc'
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc'
-    }
+    const direction = sortConfig?.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc'
     setSortConfig({ key, direction })
     setPage(1)
   }
 
-  // Loading and control states
-  const totalPages = Math.ceil(totalAnalyses / limit)
-  const isAnyMutationPending =
-    addUrlMutation.isPending ||
-    deleteAnalysesMutation.isPending ||
-    stopAnalysesMutation.isPending ||
-    rerunAnalysesMutation.isPending
-  const showFullTableLoading = isInitialLoading && analyses.length === 0
-  const disableControls = isAnyMutationPending || isInitialLoading
+  const handleStatusFilter = (status: AnalysisStatus) => {
+    setStatusFilter(statusFilter === status ? undefined : status)
+  }
 
   return (
     <>
@@ -205,9 +200,7 @@ export default function Dashboard() {
       <DashboardStats
         stats={stats}
         activeStatus={statusFilter}
-        onStatusClick={(status) =>
-          setStatusFilter(statusFilter === status ? undefined : (status as AnalysisStatus))
-        }
+        onStatusClick={handleStatusFilter}
         onTotalClick={() => setStatusFilter(undefined)}
       />
 
@@ -246,7 +239,7 @@ export default function Dashboard() {
             analyses={analyses}
             isLoading={showFullTableLoading}
             selectedIds={selectedIds}
-            onSelect={handleSelect}
+            onSelect={setSelectedIds}
             sortConfig={sortConfig}
             onSort={handleSort}
           />

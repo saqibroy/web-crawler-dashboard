@@ -11,6 +11,24 @@ interface ConfirmationModalProps {
   type?: 'danger' | 'warning' | 'info'
 }
 
+const TYPE_STYLES = {
+  danger: {
+    button: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
+    icon: 'text-red-600',
+    iconBg: 'bg-red-100',
+  },
+  warning: {
+    button: 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500',
+    icon: 'text-yellow-600',
+    iconBg: 'bg-yellow-100',
+  },
+  info: {
+    button: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500',
+    icon: 'text-blue-600',
+    iconBg: 'bg-blue-100',
+  },
+}
+
 export default function ConfirmationModal({
   isOpen,
   onClose,
@@ -23,27 +41,7 @@ export default function ConfirmationModal({
 }: ConfirmationModalProps) {
   if (!isOpen) return null
 
-  const getButtonClasses = () => {
-    switch (type) {
-      case 'danger':
-        return 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
-      case 'warning':
-        return 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500'
-      default:
-        return 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
-    }
-  }
-
-  const getIconClasses = () => {
-    switch (type) {
-      case 'danger':
-        return 'text-red-600'
-      case 'warning':
-        return 'text-yellow-600'
-      default:
-        return 'text-blue-600'
-    }
-  }
+  const styles = TYPE_STYLES[type]
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -57,11 +55,9 @@ export default function ConfirmationModal({
           <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
             <div className="sm:flex sm:items-start">
               <div
-                className={
-                  'mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10'
-                }
+                className={`mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full ${styles.iconBg} sm:mx-0 sm:h-10 sm:w-10`}
               >
-                <AlertTriangle className={`h-6 w-6 ${getIconClasses()}`} aria-hidden="true" />
+                <AlertTriangle className={`h-6 w-6 ${styles.icon}`} aria-hidden="true" />
               </div>
               <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
                 <h3 className="text-base font-semibold leading-6 text-gray-900">{title}</h3>
@@ -74,7 +70,7 @@ export default function ConfirmationModal({
           <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
             <button
               type="button"
-              className={`inline-flex w-full justify-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm sm:ml-3 sm:w-auto ${getButtonClasses()}`}
+              className={`inline-flex w-full justify-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm sm:ml-3 sm:w-auto ${styles.button}`}
               onClick={onConfirm}
             >
               {confirmText}

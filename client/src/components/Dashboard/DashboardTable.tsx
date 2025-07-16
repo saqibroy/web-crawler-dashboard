@@ -1,4 +1,3 @@
-// client/src/components/DashboardTable.tsx
 import type { Analysis, SortKey } from '../../types'
 import { sortAnalyses } from '../../utils'
 import LoadingSpinner from '../common/LoadingSpinner'
